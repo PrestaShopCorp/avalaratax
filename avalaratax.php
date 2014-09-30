@@ -1132,7 +1132,7 @@ else
 		$request->setDocDate(date('Y-m-d'));					// date
 		$request->setCustomerCode('CustomerID: '.(int)$customerCode); // string Required
 		if (isset($params['cart']))
-			$request->setDiscount($params['cart']->getOrderTotal(true, Cart::ONLY_DISCOUNTS)); // decimal
+			$request->setDiscount(0.00); // decimal
 		$request->setDetailLevel(DetailLevel::$Tax);			// Summary or Document or Line or Tax or Diagnostic
 
 		// Add line
