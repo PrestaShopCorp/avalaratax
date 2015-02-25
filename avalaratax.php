@@ -1360,8 +1360,6 @@ else
 		$cart = new Cart((int)$order->id_cart);
 		$getTaxResult = $this->getTax($products, array('type' => 'SalesInvoice', 'cart' => $cart, 'id_order' => isset($_POST['id_order']) ? (int)$_POST['id_order'] : (int)$params['id_order'], 'taxable' => $taxable));
 
-
-
 		$commitResult = $this->tax('post', array('DocCode' => (isset($_POST['id_order']) ? (int)$_POST['id_order'] : (int)$params['id_order']),
 											'DocDate' => date('Y-m-d'),	'IdCustomer' => (int)$cart->id_customer,	'TotalAmount' => (float)$getTaxResult['TotalAmount'],
 											'TotalTax' => (float)$getTaxResult['TotalTax']));
