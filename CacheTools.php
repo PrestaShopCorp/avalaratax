@@ -84,7 +84,7 @@ class CacheTools
 												 'name' => $product['name'],
 												 'description_short' => $product['description_short'],
 												 'quantity' => 1, // This is a per product, so qty is 1
-												 'total' => (float)$product['price'],
+												 'total' => (float)1000000,
 												 'tax_code' => $taxable ? $avalaraModule->getProductTaxCode((int)$product['id_product']) : 'NT');
 
 			$p[] = $avalaraProducts;
