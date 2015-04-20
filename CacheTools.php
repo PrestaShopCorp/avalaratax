@@ -84,7 +84,7 @@ class CacheTools
 												 'name' => $product['name'],
 												 'description_short' => $product['description_short'],
 												 'quantity' => 1, // This is a per product, so qty is 1
-												 'total' => (float)$product['price'],
+												 'total' => (float)1000000,
 												 'tax_code' => $taxable ? $avalaraModule->getProductTaxCode((int)$product['id_product']) : 'NT');
 
 			$p[] = $avalaraProducts;
@@ -96,8 +96,14 @@ class CacheTools
 			// If taxrate exists (but it's outdated), then update, else insert (REPLACE INTO)			
 			if (isset($getTaxResult['TotalTax']) && isset($getTaxResult['TotalAmount']))
 			{
+				$total_tax = $getTaxResult['TotalTax'];
+				$total_amount = $getTaxResult['TotalAmount'];
+				if ($total_amount == 0)
+					$db_rate = 0;
+				else
+					$db_rate = (float)($total_tax * 100 / $total_amount);
 				Db::getInstance()->Execute('REPLACE INTO `'._DB_PREFIX_.'avalara_product_cache` (`id_product`, `tax_rate`, `region`, `update_date`, `id_address`)
-				VALUES ('.(int)$product['id_product'].', '.(float)($getTaxResult['TotalTax'] * 100 / $getTaxResult['TotalAmount']).',
+				VALUES ('.(int)$product['id_product'].', '.$db_rate.',
 				\''.($region ? pSQL($region) : '').'\', \''.date('Y-m-d H:i:s').'\', '.(int)$cart->{Configuration::get('PS_TAX_ADDRESS_TYPE')}.')');
 			}
 		}

@@ -1157,7 +1157,7 @@ else
 				$line->setTaxCode($taxCode);
 				$line->setQty(isset($product['quantity']) ? (float)$product['quantity'] : 1);
 				$line->setAmount($params['type'] == 'ReturnInvoice' && (float)$product['total'] > 0 ? (float)$product['total'] * -1 : (float)$product['total']);
-				$line->setDiscounted(false);
+				$line->setDiscounted(true);
 
 				$lines[] = $line;
 			}
@@ -1176,7 +1176,7 @@ else
 				$line->setTaxCode('FR020100'); 		// Default TaxCode for Shipping. Avalara will decide depending on the State if taxes should be charged or not
 			$line->setQty(1);
 			$line->setAmount((float)$params['cart']->getOrderTotal(false, Cart::ONLY_SHIPPING));
-			$line->setDiscounted(false);
+			$line->setDiscounted(true);
 			$lines[] = $line;
 		}
 
