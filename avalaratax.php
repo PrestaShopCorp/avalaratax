@@ -39,7 +39,7 @@ class AvalaraTax extends Module
 	{
 		$this->name = 'avalaratax';
 		$this->tab = 'billing_invoicing';
-		$this->version = '3.5.4';
+		$this->version = '3.5.5';
 		$this->author = 'PrestaShop';
 		parent::__construct();
 
