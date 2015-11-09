@@ -46,13 +46,13 @@ class Tax extends TaxCore
 				CacheTools::updateCarrierTax($avalara, $context->cart, (int)$id_address, $region, true);
 			else
 				CacheTools::updateProductsTax($avalara, $context->cart, (int)$id_address, $region, true);
-			
+
 			$res = self::getTaxFromCache((int)$id_product, (int)$id_address, $region, $getCarrierRate);
 		}
 
 		return $res;
 	}
-	
+
 	public static function getTaxFromCache($id_product, $id_address = null, $region = null, $getCarrierRate = false)
 	{
 		return (float)Db::getInstance()->getValue('
@@ -61,7 +61,7 @@ class Tax extends TaxCore
 		WHERE ac.`id_'.($getCarrierRate ? 'carrier' : 'product').'` = '.(int)$id_product.'
 		'.($getCarrierRate ? '' : ' AND id_address = '.(int)$id_address).'
 		AND ac.`region` = \''.pSQL($region).'\'');
-	}	
+	}
 
 	public static function getCarrierTaxRate($id_carrier, $id_address = NULL)
 	{
