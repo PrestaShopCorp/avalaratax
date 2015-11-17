@@ -39,16 +39,18 @@ class AvalaraTax extends Module
 	{
 		$this->name = 'avalaratax';
 		$this->tab = 'billing_invoicing';
-		$this->version = '3.5.5';
+		$this->version = '3.5.6';
 		$this->author = 'PrestaShop';
 		parent::__construct();
 
+		$this->tax_manager_class = "AvalaraTaxManager";
+
 		$this->displayName = $this->l('Avalara - AvaTax');
 		$this->description = $this->l('Sales Tax is complicated. AvaTax makes it easy.');
-		
+
 		/** Backward compatibility */
 		require(_PS_MODULE_DIR_.$this->name.'/backward_compatibility/backward.php');
-		
+
 		if (!extension_loaded('soap') || !class_exists('SoapClient'))
 			$this->warning = $this->l('SOAP extension should be enabled on your server to use this module.');
 	}
@@ -66,10 +68,10 @@ class AvalaraTax extends Module
 		// Value possible : Development / Production
 		Configuration::updateValue('AVALARATAX_MODE', 'Production');
 		Configuration::updateValue('AVALARATAX_ADDRESS_NORMALIZATION', 1);
-		Configuration::updateValue('AVALARATAX_COMMIT_ID', (int)Configuration::get('PS_OS_DELIVERED')); 
+		Configuration::updateValue('AVALARATAX_COMMIT_ID', (int)Configuration::get('PS_OS_DELIVERED'));
 		Configuration::updateValue('AVALARATAX_CANCEL_ID', (int)Configuration::get('PS_OS_CANCELED'));
 		Configuration::updateValue('AVALARATAX_REFUND_ID', (int)Configuration::get('PS_OS_REFUND'));
-		Configuration::updateValue('AVALARATAX_POST_ID', (int)Configuration::get('PS_OS_PAYMENT')); 
+		Configuration::updateValue('AVALARATAX_POST_ID', (int)Configuration::get('PS_OS_PAYMENT'));
 		Configuration::updateValue('AVALARATAX_STATE', 1);
 		Configuration::updateValue('PS_TAX_DISPLAY', 1);
 		Configuration::updateValue('AVALARATAX_COUNTRY', 0);
@@ -146,7 +148,7 @@ class AvalaraTax extends Module
 
 		if (!parent::install() || !$this->registerHook('leftColumn') || !$this->registerHook('updateOrderStatus') ||
 			!$this->registerHook('cancelProduct') || !$this->registerHook('adminOrder') || !$this->registerHook('backOfficeTop') ||
-			!$this->registerHook('header') || !$this->overrideFiles())
+			!$this->registerHook('header') || !$this->registerHook('taxManager') || !$this->overrideFiles())
 			return false;
 		return true;
 	}
@@ -174,7 +176,7 @@ class AvalaraTax extends Module
 			!Configuration::deleteByName('AVALARATAX_REFUND_ID') ||
 			!Configuration::deleteByName('AVALARA_CACHE_MAX_LIMIT') ||
 			!Configuration::deleteByName('AVALARATAX_POST_ID') ||
-			!Configuration::deleteByName('AVALARATAX_CONFIGURATION_OK') ||			
+			!Configuration::deleteByName('AVALARATAX_CONFIGURATION_OK') ||
 			!Db::getInstance()->Execute('DROP TABLE `'._DB_PREFIX_.'avalara_product_cache`') ||
 			!Db::getInstance()->Execute('DROP TABLE `'._DB_PREFIX_.'avalara_carrier_cache`') ||
 			!Db::getInstance()->Execute('DROP TABLE `'._DB_PREFIX_.'avalara_address_validation_cache`') ||
@@ -276,6 +278,29 @@ class AvalaraTax extends Module
 	/******************************************************************/
 	/** Hook Methods **************************************************/
 	/******************************************************************/
+
+	public function hookTaxManager($args)
+	{
+		$class_file = _PS_MODULE_DIR_.'/'.$this->name.'/classes/'.$this->tax_manager_class.'.php';
+
+    if (!isset($this->tax_manager_class) || !file_exists($class_file)) {
+      die(sprintf(Tools::displayError('Incorrect Tax Manager class [%s]'), $this->tax_manager_class));
+    }
+
+    require_once($class_file);
+
+    if (!class_exists($this->tax_manager_class)) {
+      die(sprintf(Tools::displayError('Tax Manager class not found [%s]'), $this->tax_manager_class));
+    }
+
+    $class = $this->tax_manager_class;
+
+    if (call_user_func(array($class, 'isAvailableForThisAddress'), $args['address'])) {
+    	return new $class($args['address'], $args['params']);
+    }
+
+    return false;
+	}
 
 	public function hookAdminOrder($params)
 	{
@@ -485,47 +510,48 @@ class AvalaraTax extends Module
 		return '';
 	}
 
+	// This hook for capturing cart progress is no longer useful
 	public function hookHeader()
 	{
-		if (!$this->context->cart || ((int)$this->context->cart->id_customer && !(int)$this->context->cart->{Configuration::get('PS_TAX_ADDRESS_TYPE')}))
-			$id_address = (int)(Db::getInstance()->getValue('SELECT `id_address` FROM `'._DB_PREFIX_.'address` WHERE `id_customer` = '.(int)($this->context->cart->id_customer).' AND `deleted` = 0 ORDER BY `id_address`'));
-		else
-			$id_address = $this->context->cart->{Configuration::get('PS_TAX_ADDRESS_TYPE')};
+		// if (!$this->context->cart || ((int)$this->context->cart->id_customer && !(int)$this->context->cart->{Configuration::get('PS_TAX_ADDRESS_TYPE')}))
+		// 	$id_address = (int)(Db::getInstance()->getValue('SELECT `id_address` FROM `'._DB_PREFIX_.'address` WHERE `id_customer` = '.(int)($this->context->cart->id_customer).' AND `deleted` = 0 ORDER BY `id_address`'));
+		// else
+		// 	$id_address = $this->context->cart->{Configuration::get('PS_TAX_ADDRESS_TYPE')};
 
-		if (!(int)$id_address)
-			return ;
-		return '<script type="text/javascript">
-				function refresh_taxes(count)
-				{
-					$.ajax({
-						type : \'POST\',
-						url : \''.$this->_path.'\' + \'ajax.php\',
-						data : {
-							\'id_cart\': "'.(int)$this->context->cart->id.'",
-							\'id_lang\': "'.(int)$this->context->cookie->id_lang.'",
-							\'id_address\': "'.(int)$id_address.'",
-							\'ajax\': "getProductTaxRate",
-							\'token\': "'.md5(_COOKIE_KEY_.Configuration::get('PS_SHOP_NAME')).'",
-						},
-						dataType: \'json\',
-						success : function(d) {
-							if (d.hasError == false && d.cached_tax == true)
-											$(\'#total_tax\').html($(\'body\').data(\'total_tax\'));
-							else if (d.hasError == false && d.cached_tax == false)
-											$(\'#total_tax\').html(d.total_tax);
-							else
-											$(\'#total_tax\').html(\''.$this->l('Error while calculating taxes').'\');
-						}
-					});
-				}
+		// if (!(int)$id_address)
+		// 	return ;
+		// return '<script type="text/javascript">
+		// 		function refresh_taxes(count)
+		// 		{
+		// 			$.ajax({
+		// 				type : \'POST\',
+		// 				url : \''.$this->_path.'\' + \'ajax.php\',
+		// 				data : {
+		// 					\'id_cart\': "'.(int)$this->context->cart->id.'",
+		// 					\'id_lang\': "'.(int)$this->context->cookie->id_lang.'",
+		// 					\'id_address\': "'.(int)$id_address.'",
+		// 					\'ajax\': "getProductTaxRate",
+		// 					\'token\': "'.md5(_COOKIE_KEY_.Configuration::get('PS_SHOP_NAME')).'",
+		// 				},
+		// 				dataType: \'json\',
+		// 				success : function(d) {
+		// 					if (d.hasError == false && d.cached_tax == true)
+		// 									$(\'#total_tax\').html($(\'body\').data(\'total_tax\'));
+		// 					else if (d.hasError == false && d.cached_tax == false)
+		// 									$(\'#total_tax\').html(d.total_tax);
+		// 					else
+		// 									$(\'#total_tax\').html(\''.$this->l('Error while calculating taxes').'\');
+		// 				}
+		// 			});
+		// 		}
 
-		$(function() {
-			/* ajax call to cache taxes product taxes that exist in the current cart */
-			$(\'body\').data(\'total_tax\', $(\'#total_tax\').text());
-			$(\'#total_tax\').html(\'<img src="img/loader.gif" alt="" />\');
-			refresh_taxes(1);
-		});
-		</script>';
+		// $(function() {
+		// 	/* ajax call to cache taxes product taxes that exist in the current cart */
+		// 	$(\'body\').data(\'total_tax\', $(\'#total_tax\').text());
+		// 	$(\'#total_tax\').html(\'<img src="img/loader.gif" alt="" />\');
+		// 	refresh_taxes(1);
+		// });
+		// </script>';
 	}
 
 	/******************************************************************/
@@ -534,14 +560,14 @@ class AvalaraTax extends Module
 	public function getContent()
 	{
 		$buffer = '';
-		
+
 		if (version_compare(_PS_VERSION_,'1.5','>'))
 			$this->context->controller->addJQueryPlugin('fancybox');
 		else
 			$buffer .= '<script type="text/javascript" src="'.__PS_BASE_URI__.'js/jquery/jquery.fancybox-1.3.4.js"></script>
 		  	<link type="text/css" rel="stylesheet" href="'.__PS_BASE_URI__.'css/jquery.fancybox-1.3.4.css" />';
 
-		if (Tools::isSubmit('SubmitAvalaraTaxSettings')) 
+		if (Tools::isSubmit('SubmitAvalaraTaxSettings'))
 		{
 			Configuration::updateValue('AVALARATAX_ACCOUNT_NUMBER', Tools::getValue('avalaratax_account_number'));
 			Configuration::updateValue('AVALARATAX_LICENSE_KEY', Tools::getValue('avalaratax_license_key'));
@@ -551,7 +577,7 @@ class AvalaraTax extends Module
 			$connectionTestResult = $this->_testConnection();
 			if (strpos($connectionTestResult[0], 'Error') === false)
 			{
-				Configuration::updateValue('AVALARATAX_CONFIGURATION_OK', true); 
+				Configuration::updateValue('AVALARATAX_CONFIGURATION_OK', true);
 				$buffer .= $this->_displayConfirmation();
 			}
 		}
@@ -662,12 +688,12 @@ class AvalaraTax extends Module
 				if (height1 < $(this).height())
 				    height1 = $(this).height();
 			    });
-			    
+
 			    $(\'.field-height\').each(function(){
 				if (height < $(this).height())
 				    height = $(this).height();
 			    });
-			
+
 				$(\'.field-height1\').css({\'height\' : $(\'.field-height1\').css(\'height\', height1+\'px\')});
 			    $(\'.field-height\').css({\'height\' : $(\'.field-height\').css(\'height\', height+\'px\')});
 
@@ -741,10 +767,10 @@ else
 			<form action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'" method="post" class="left-form">
 				<fieldset class="field-height1">
 					<legend><img src="'.$this->_path.'img/icon-config.gif" alt="" />'.$this->l('Configuration').'</legend>
-					<h4>'.$this->l('AvaTax Credentials').'</h4>';	
+					<h4>'.$this->l('AvaTax Credentials').'</h4>';
 					if (isset($connectionTestResult))
 						$buffer .= '<div id="test_connection" style="background: '.Tools::safeOutput($connectionTestResult[1]).';">'.$connectionTestResult[0].'</div>';
-			
+
 					$buffer .= '<label>'.$this->l('Account Number').'</label>
 					<div class="margin-form">
 						<input type="text" name="avalaratax_account_number" value="'.(isset($confValues['AVALARATAX_ACCOUNT_NUMBER']) ? Tools::safeOutput($confValues['AVALARATAX_ACCOUNT_NUMBER']) : '').'" />
@@ -801,7 +827,7 @@ else
 					<div class="sep"></div>
 					<h4>'.$this->l('Default Post/Commit/Cancel/Refund Options').'</h4>
 					<span class="avalara-info">'.$this->l('When an order\'s status is updated, the following options will be used to update Avalara\'s records.').'</span>';
-	
+
 			// Check if the order status exist
 			$orderStatusList = array();
 			foreach (Db::getInstance()->ExecuteS('SELECT `id_order_state`, `name` FROM `'._DB_PREFIX_.'order_state_lang` WHERE `id_lang` = '.(int)$this->context->cookie->id_lang) as $v)
@@ -867,7 +893,7 @@ else
 						<select name="avalaratax_state" id="avalaratax_state">';
 			foreach ($stateList as $state)
 				$buffer .= '<option value="'.substr(strtoupper($state['iso_code']), 0, 2).'" '.($state['iso_code'] == $confValues['AVALARATAX_STATE'] ? ' selected="selected"' : '').'>'.Tools::safeOutput($state['name']).'</option>';
-			
+
 			$buffer .= '</select>
 					</div>
 					<div class="margin-form">
@@ -877,7 +903,7 @@ else
 			</form>
 			<div class="clear"></div>
 		</div>';
-		
+
 		return $buffer;
 	}
 
@@ -1080,10 +1106,10 @@ else
 		$request->setOriginAddress($origin);
 
 		$request->setCompanyCode(isset($confValues['AVALARATAX_COMPANY_CODE']) ? $confValues['AVALARATAX_COMPANY_CODE'] : '');
-		
+
 		if (isset($address->vat_number) && !empty($address->vat_number) && $address->vat_number != 'undefined')
 			$request->setBusinessIdentificationNo($address->vat_number);
-		
+
 		$orderId = isset($params['cart']) ? (int)$params['cart']->id : (int)$params['DocCode'];
 		$nowTime = date('mdHis');
 
@@ -1132,9 +1158,15 @@ else
 		$request->setDocDate(date('Y-m-d'));					// date
 		$request->setCustomerCode('CustomerID: '.(int)$customerCode); // string Required
 		if (isset($params['cart']))
-			$request->setDiscount($params['cart']->getOrderTotal(false, Cart::ONLY_DISCOUNTS)); // decimal
+		{
+			$discount_total = $params['cart']->getOrderTotal(false, Cart::ONLY_DISCOUNTS); // decimal
+			$request->setDiscount($discount_total);
+		}
 		else
+		{
 			$request->setDiscount(0.00); // decimal
+		}
+
 		$request->setDetailLevel(DetailLevel::$Tax);			// Summary or Document or Line or Tax or Diagnostic
 
 		// Add line
@@ -1170,13 +1202,13 @@ else
 			$line->setNo('Shipping');			// string line Number of invoice ($i)
 			$line->setItemCode('Shipping');
 			$line->setDescription('Shipping costs');
-			if (isset($params['taxable']) && !$params['taxable'])
-				$line->setTaxCode('NT');
-			else
+			// if (isset($params['taxable']) && !$params['taxable'])
+			// 	$line->setTaxCode('NT');
+			// else
 				$line->setTaxCode('FR020100'); 		// Default TaxCode for Shipping. Avalara will decide depending on the State if taxes should be charged or not
 			$line->setQty(1);
 			$line->setAmount((float)$params['cart']->getOrderTotal(false, Cart::ONLY_SHIPPING));
-			$line->setDiscounted(true);
+			$line->setDiscounted(true); // TODO: Need to check if the discount rules used were actually applied to shipping or not
 			$lines[] = $line;
 		}
 
@@ -1221,6 +1253,163 @@ else
 			$buffer['Exception']['LastResponse'] = Tools::safeOutput($client->__getLastResponse());
 		}
 		return $buffer;
+	}
+
+	public function getSingleTaxRate($address, $tax_code)
+	{
+		$confValues = Configuration::getMultiple(array('AVALARATAX_COMPANY_CODE', 'AVALARATAX_ADDRESS_LINE1',
+										'AVALARATAX_ADDRESS_LINE2', 'AVALARATAX_CITY', 'AVALARATAX_STATE', 'AVALARATAX_ZIP_CODE'));
+
+		$this->_connectToAvalara();
+
+		$client = new TaxServiceSoap(Configuration::get('AVALARATAX_MODE'));
+		$request = new GetTaxRequest();
+
+		$type = 'SalesOrder'; // SalesOrder: Occurs when customer adds product to the cart (generally to check how much the tax will be)
+		$request->setDocType(DocumentType::$SalesOrder);
+
+		// Apply Address formatting
+		if (isset($address))
+		{
+			if (!empty($address->id_state))
+				$state = new State((int)$address->id_state);
+
+			$addressDest = array();
+			$addressDest['Line1'] = $address->address1;
+			$addressDest['Line2'] = $address->address2;
+			$addressDest['City'] = $address->city;
+			$addressDest['Region'] = isset($state) ? $state->iso_code : '';
+			$addressDest['PostalCode'] = $address->postcode;
+			$addressDest['Country'] = Country::getIsoById($address->id_country);
+
+			// Address normalization won't matter when we're only using State (region) and zip code
+
+			// Try to normalize the address depending on option in the BO
+			// if (Configuration::get('AVALARATAX_ADDRESS_NORMALIZATION'))
+			// {
+			// 	$last_update = Db::getInstance()->getValue('SELECT date_add FROM '._DB_PREFIX_.'avalara_address_validation_cache WHERE id_address = '.(int)$address->id);
+			// 	if (empty($last_update) || (strtotime($address->date_upd) > strtotime($last_update)))
+			// 	{
+			// 		$normalizedAddress = $this->validateAddress($address);
+			// 		Db::getInstance()->Execute('INSERT INTO '._DB_PREFIX_.'avalara_address_validation_cache (id_address, date_add) VALUES ('.(int)$address->id.', \''.pSQL(date('Y-m-d H:i:s')).'\') ON DUPLICATE KEY UPDATE date_add = \''.pSQL(date('Y-m-d H:i:s')).'\'');
+			// 	}
+			// }
+
+			// if (isset($normalizedAddress['Normalized']))
+			// 	$addressDest = $normalizedAddress['Normalized'];
+
+			// Add Destination address (Customer address)
+			$destination = new AvalaraAddress();
+			//$destination->setLine1($addressDest['Line1']);
+			//$destination->setLine2($addressDest['Line2']);
+			//$destination->setCity($addressDest['City']);
+			$destination->setRegion($addressDest['Region']);
+			$destination->setPostalCode($addressDest['PostalCode']); // For now we are using only postcode and region (state)
+			//$destination->setCountry($addressDest['Country']);
+
+			$request->setDestinationAddress($destination);
+		}
+
+		// Origin Address (Store Address or address setup in BO)
+		$origin = new AvalaraAddress();
+		$origin->setLine1(isset($confValues['AVALARATAX_ADDRESS_LINE1']) ? $confValues['AVALARATAX_ADDRESS_LINE1'] : '');
+		$origin->setLine2(isset($confValues['AVALARATAX_ADDRESS_LINE2']) ? $confValues['AVALARATAX_ADDRESS_LINE2'] : '');
+		$origin->setCity(isset($confValues['AVALARATAX_CITY']) ? $confValues['AVALARATAX_CITY'] : '');
+		$origin->setRegion(isset($confValues['AVALARATAX_STATE']) ? $confValues['AVALARATAX_STATE'] : '');
+		$origin->setPostalCode(isset($confValues['AVALARATAX_ZIP_CODE']) ? $confValues['AVALARATAX_ZIP_CODE'] : '');
+		$request->setOriginAddress($origin);
+
+		$request->setCompanyCode(isset($confValues['AVALARATAX_COMPANY_CODE']) ? $confValues['AVALARATAX_COMPANY_CODE'] : '');
+
+		if (isset($address->vat_number) && !empty($address->vat_number) && $address->vat_number != 'undefined')
+			$request->setBusinessIdentificationNo($address->vat_number);
+
+		//$orderId = isset($params['cart']) ? (int)$params['cart']->id : (int)$params['DocCode'];
+		$orderId = $tax_code; // TODO: Although we are not committing an actual order it may be useful to come up with some unique Id schema
+		$nowTime = date('mdHis');
+
+		// Attempt to get a customer code
+		if (isset($this->context->cookie->id_customer))
+			$customerCode = $this->context->cookie->id_customer;
+		else
+		{
+			if (isset($params['DocCode']))
+				$id_order = (int)$params['DocCode'];
+			elseif (isset($_POST['id_order']))
+				$id_order = (int)$_POST['id_order'];
+			elseif (isset($params['id_order']))
+				$id_order = (int)$params['id_order'];
+			else
+				$id_order = 0;
+
+			$customerCode = (int)Db::getInstance()->getValue('SELECT `id_customer` FROM `'._DB_PREFIX_.'orders` WHERE `id_order` = '.(int)$id_order);
+		}
+
+		$request->setDocCode('Order '.Tools::safeOutput($orderId)); // Order Id - has to be float due to the . and more numbers for returns
+		$request->setDocDate(date('Y-m-d'));					// date
+		$request->setCustomerCode('CustomerID: '.(int)$customerCode); // string Required
+
+		$request->setDiscount(0.00); // decimal
+
+		$request->setDetailLevel(DetailLevel::$Tax);			// Summary or Document or Line or Tax or Diagnostic
+
+		// Add single line item (may be product or shipping as we only care about the tax code at this point)
+		$lines = array();
+		$line = new Line();
+		$line->setNo(0);
+		$line->setItemCode($tax_code); // We don't care about storing the item code as we only want to cache on tax codes for this request
+		$line->setDescription("");
+		$line->setTaxCode($tax_code);
+		$line->setQty(1); // Always use one for this request, as we are just calculating a rate (the total amount doesn't matter)
+		$line->setAmount((float)100); // Always use 1000 as we are just calculating a rate
+		$line->setDiscounted(true); // This shouldn't matter for this single line request where we default discount to 0.00
+
+		$lines[] = $line;
+
+		$request->setLines($lines);
+		$buffer = array();
+		try
+		{
+			$result = $client->getTax($request);
+			$buffer['ResultCode'] = Tools::safeOutput($result->getResultCode());
+			if ($result->getResultCode() == SeverityLevel::$Success)
+			{
+				$buffer['DocCode'] = Tools::safeOutput($request->getDocCode());
+				$buffer['TotalAmount'] = Tools::safeOutput($result->getTotalAmount());
+				$buffer['TotalTax'] = Tools::safeOutput($result->getTotalTax());
+				$buffer['NowTime'] = $nowTime;
+				foreach ($result->getTaxLines() as $ctl)
+				{
+					$buffer['TaxLines'][$ctl->getNo()]['GetTax'] = Tools::safeOutput($ctl->getTax());
+					$buffer['TaxLines'][$ctl->getNo()]['TaxCode'] = Tools::safeOutput($ctl->getTaxCode());
+
+					foreach ($ctl->getTaxDetails() as $ctd)
+					{
+						$buffer['TaxLines'][$ctl->getNo()]['TaxDetails']['JurisType'] = Tools::safeOutput($ctd->getJurisType());
+						$buffer['TaxLines'][$ctl->getNo()]['TaxDetails']['JurisName'] = Tools::safeOutput($ctd->getJurisName());
+						$buffer['TaxLines'][$ctl->getNo()]['TaxDetails']['Region'] = Tools::safeOutput($ctd->getRegion());
+						$buffer['TaxLines'][$ctl->getNo()]['TaxDetails']['Rate'] = Tools::safeOutput($ctd->getRate());
+						$buffer['TaxLines'][$ctl->getNo()]['TaxDetails']['Tax'] = Tools::safeOutput($ctd->getTax());
+					}
+				}
+			}
+			else
+				// For the failure state collect all error messages so we can display them later
+				foreach ($result->getMessages() as $msg)
+				{
+					$buffer['Messages']['Name'] = Tools::safeOutput($msg->getName());
+					$buffer['Messages']['Summary'] = Tools::safeOutput($msg->getSummary());
+				}
+		}
+		catch (SoapFault $exception)
+		{
+			$buffer['Exception']['FaultString'] = Tools::safeOutput($exception->faultstring);
+			$buffer['Exception']['LastRequest'] = Tools::safeOutput($client->__getLastRequest());
+			$buffer['Exception']['LastResponse'] = Tools::safeOutput($client->__getLastResponse());
+		}
+
+		//return $buffer;
+		return (($buffer['TotalTax'] / $buffer['TotalAmount']) * 100); // Calculate and return the tax rate
 	}
 
 	/*
@@ -1422,7 +1611,7 @@ else
 	public function fixPOST()
 	{
 		$address = new Address(isset($_POST['id_address']) ? (int)$_POST['id_address'] : null);
-		
+
 		/* Validate address only in the U.S. and Canada - if the Address Validation feature has been turned on in the module's configuration */
 		if (($address->id_country == Country::getByIso('US') || $address->id_country == Country::getByIso('CA')) && $this->tax('isAuthorized') && Configuration::get('AVALARATAX_ADDRESS_VALIDATION'))
 		{
@@ -1438,7 +1627,7 @@ else
 			if (isset($normalizedAddress['ResultCode']) && $normalizedAddress['ResultCode'] == 'Success')
 			{
 				Db::getInstance()->Execute('INSERT INTO '._DB_PREFIX_.'avalara_address_validation_cache (id_address, date_add) VALUES ('.(int)$address->id.', \''.pSQL(date('Y-m-d H:i:s')).'\') ON DUPLICATE KEY UPDATE date_add = \''.pSQL(date('Y-m-d H:i:s')).'\'');
-				
+
 				$_POST['address1'] = Tools::safeOutput($normalizedAddress['Normalized']['Line1']);
 				$_POST['address2'] = Tools::safeOutput($normalizedAddress['Normalized']['Line2']);
 				$_POST['city'] = Tools::safeOutput($normalizedAddress['Normalized']['City']);
@@ -1455,7 +1644,8 @@ else
 		FROM `'._DB_PREFIX_.'avalara_taxcodes` atc
 		WHERE atc.`id_product` = '.(int)$id_product);
 
-		return $result ? Tools::safeOutput($result) : '0';
+		//return $result ? Tools::safeOutput($result) : '0';
+		return empty($result) ? '0' : Tools::safeOutput($result);
 	}
 
 	public function getProductTaxable($idProduct)
