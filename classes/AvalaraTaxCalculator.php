@@ -3,7 +3,7 @@
 class AvalaraTaxCalculator extends TaxCalculatorCore
 {
   public $count = 0;
-  public $tax_code = 0;
+  public $tax_code = NULL;
   public $tax_rate = 0;
 
   public function __construct(array $taxes = array(), $computation_method = TaxCalculator::COMBINE_METHOD)
@@ -20,8 +20,12 @@ class AvalaraTaxCalculator extends TaxCalculatorCore
     // Our tax calculator ignores any Tax Rules from Prestashop
     // instead we look for tax code and tax rate values
     $this->taxes = array();
-    $this->tax_code = $taxes['tax_code'];
-    $this->tax_rate = $taxes['tax_rate'];
+
+    if (isset($taxes['tax_code']))
+      $this->tax_code = $taxes['tax_code'];
+    if (isset($taxes['tax_rate']))
+      $this->tax_rate = $taxes['tax_rate'];
+
     $this->computation_method = (int)$computation_method;
   }
 
