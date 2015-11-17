@@ -41,103 +41,103 @@ class Cart extends CartCore
 	 *
 	 * @return float Price of the shipping.
 	 */
-	public function getOrderShippingCost($id_carrier = null, $use_tax = true, Country $default_country = null, $product_list = null)
-	{
-		include_once(_PS_ROOT_DIR_.'/modules/avalaratax/avalaratax.php');
+	// public function getOrderShippingCost($id_carrier = null, $use_tax = true, Country $default_country = null, $product_list = null)
+	// {
+	// 	include_once(_PS_ROOT_DIR_.'/modules/avalaratax/avalaratax.php');
 
-		/* Instanciate the Avalara module and check if active */
-		$avalara = new AvalaraTax();
-		if (!$avalara->active)
-			return parent::getOrderShippingCost((int)$id_carrier, $use_tax, $default_country, $product_list);
+	// 	/* Instanciate the Avalara module and check if active */
+	// 	$avalara = new AvalaraTax();
+	// 	if (!$avalara->active)
+	// 		return parent::getOrderShippingCost((int)$id_carrier, $use_tax, $default_country, $product_list);
 
-		/* Retrieve the original carrier fee tax excluded */
-		$tax_excluded_cost = parent::getOrderShippingCost((int)$id_carrier, false, $default_country, $product_list);
+	// 	/* Retrieve the original carrier fee tax excluded */
+	// 	$tax_excluded_cost = parent::getOrderShippingCost((int)$id_carrier, false, $default_country, $product_list);
 
-		/* If we want price without tax or if this carrier is tax free, return this price */
-		if (!(int)$this->{Configuration::get('PS_TAX_ADDRESS_TYPE')} || !$use_tax)
-			return $tax_excluded_cost;
+	// 	/* If we want price without tax or if this carrier is tax free, return this price */
+	// 	if (!(int)$this->{Configuration::get('PS_TAX_ADDRESS_TYPE')} || !$use_tax)
+	// 		return $tax_excluded_cost;
 
-		/* If there is no cache or cache expired, we regenerate it */
-		if (CacheTools::checkCarrierCache($this))
-		{
-			$region = Db::getInstance()->getValue('
-			SELECT s.`iso_code`
-			FROM '._DB_PREFIX_.'address a
-			LEFT JOIN '._DB_PREFIX_.'state s ON (s.`id_state` = a.`id_state`)
-			WHERE a.`id_address` = '.(int)$this->{Configuration::get('PS_TAX_ADDRESS_TYPE')});
-			CacheTools::updateCarrierTax($avalara, $this, $this->{Configuration::get('PS_TAX_ADDRESS_TYPE')}, $region, $use_tax);
-		}
+	// 	/* If there is no cache or cache expired, we regenerate it */
+	// 	if (CacheTools::checkCarrierCache($this))
+	// 	{
+	// 		$region = Db::getInstance()->getValue('
+	// 		SELECT s.`iso_code`
+	// 		FROM '._DB_PREFIX_.'address a
+	// 		LEFT JOIN '._DB_PREFIX_.'state s ON (s.`id_state` = a.`id_state`)
+	// 		WHERE a.`id_address` = '.(int)$this->{Configuration::get('PS_TAX_ADDRESS_TYPE')});
+	// 		CacheTools::updateCarrierTax($avalara, $this, $this->{Configuration::get('PS_TAX_ADDRESS_TYPE')}, $region, $use_tax);
+	// 	}
 
-		/* If we do already know it, then return it */
-		return $tax_excluded_cost + (float)CacheTools::getCarrierTaxAmount($this);
-	}
+	// 	/* If we do already know it, then return it */
+	// 	return $tax_excluded_cost + (float)CacheTools::getCarrierTaxAmount($this);
+	// }
 
-	/**
-	 * @brief Calculate the shipping cost.
-	 *
-	 * Override it in order to calculate and add the correct tax amount.
-	 *
-	 * @note This method is only called in PrestaShop > 1.5
-	 * @see  Cart::getOrderShippingCost() for PrestaShop < 1.5
-	 *
-	 * @param Array    $delivery_option Delivery options
-	 * @param boolean  $use_tax         Do we want the taxes?
-	 * @param Country  $default_country Default country (1.5 only)
-	 *
-	 * @return float Price of the shipping.
-	 */
-	public function getTotalShippingCost($delivery_option = null, $use_tax = true, Country $default_country = null)
-	{
-		include_once(_PS_ROOT_DIR_.'/modules/avalaratax/avalaratax.php');
+	// /**
+	//  * @brief Calculate the shipping cost.
+	//  *
+	//  * Override it in order to calculate and add the correct tax amount.
+	//  *
+	//  * @note This method is only called in PrestaShop > 1.5
+	//  * @see  Cart::getOrderShippingCost() for PrestaShop < 1.5
+	//  *
+	//  * @param Array    $delivery_option Delivery options
+	//  * @param boolean  $use_tax         Do we want the taxes?
+	//  * @param Country  $default_country Default country (1.5 only)
+	//  *
+	//  * @return float Price of the shipping.
+	//  */
+	// public function getTotalShippingCost($delivery_option = null, $use_tax = true, Country $default_country = null)
+	// {
+	// 	include_once(_PS_ROOT_DIR_.'/modules/avalaratax/avalaratax.php');
 
-		/* Instanciate the Avalara module and check if active */
-		$avalara = new AvalaraTax();
-		if (!$avalara->active)
-			return parent::getTotalShippingCost($delivery_option, $use_tax, $default_country);
+	// 	/* Instanciate the Avalara module and check if active */
+	// 	$avalara = new AvalaraTax();
+	// 	if (!$avalara->active)
+	// 		return parent::getTotalShippingCost($delivery_option, $use_tax, $default_country);
 
-		/* Retrieve the original carrier fee tax excluded */
-		$tax_excluded_cost = parent::getTotalShippingCost($delivery_option, false, $default_country);
+	// 	/* Retrieve the original carrier fee tax excluded */
+	// 	$tax_excluded_cost = parent::getTotalShippingCost($delivery_option, false, $default_country);
 
-		/* If we want price without tax or if this carrier is tax free, return this price */
-		if (!(int)$this->{Configuration::get('PS_TAX_ADDRESS_TYPE')} || !$use_tax)
-			return $tax_excluded_cost;
+	// 	/* If we want price without tax or if this carrier is tax free, return this price */
+	// 	if (!(int)$this->{Configuration::get('PS_TAX_ADDRESS_TYPE')} || !$use_tax)
+	// 		return $tax_excluded_cost;
 
-		/* If there is no cache or cache expired, we regenerate it */
-		if (CacheTools::checkCarrierCache($this))
-		{
-			$region = Db::getInstance()->getValue('
-			SELECT s.`iso_code`
-			FROM '._DB_PREFIX_.'address a
-			LEFT JOIN '._DB_PREFIX_.'state s ON (s.`id_state` = a.`id_state`)
-			WHERE a.`id_address` = '.(int)$this->{Configuration::get('PS_TAX_ADDRESS_TYPE')});
-			CacheTools::updateCarrierTax($avalara, $this, $this->{Configuration::get('PS_TAX_ADDRESS_TYPE')}, $region);
-		}
+	// 	/* If there is no cache or cache expired, we regenerate it */
+	// 	if (!CacheTools::checkCarrierCache($this))
+	// 	{
+	// 		$region = Db::getInstance()->getValue('
+	// 		SELECT s.`iso_code`
+	// 		FROM '._DB_PREFIX_.'address a
+	// 		LEFT JOIN '._DB_PREFIX_.'state s ON (s.`id_state` = a.`id_state`)
+	// 		WHERE a.`id_address` = '.(int)$this->{Configuration::get('PS_TAX_ADDRESS_TYPE')});
+	// 		CacheTools::updateCarrierTax($avalara, $this, $this->{Configuration::get('PS_TAX_ADDRESS_TYPE')}, $region);
+	// 	}
 
-		/* If we do already know it, then return it */
-		return $tax_excluded_cost + (float)CacheTools::getCarrierTaxAmount($this);
-	}
-	
-	public function getPackageShippingCost($id_carrier = null, $use_tax = true, Country $default_country = null, $product_list = null, $id_zone = null)
-	{
-		include_once(_PS_ROOT_DIR_.'/modules/avalaratax/avalaratax.php');
+	// 	/* If we do already know it, then return it */
+	// 	return $tax_excluded_cost + (float)CacheTools::getCarrierTaxAmount($this);
+	// }
 
-		/* Instanciate the Avalara module and check if active */
-		$avalara = new AvalaraTax();
-		if (!$avalara->active)
-			return parent::getPackageShippingCost((int)$id_carrier, $use_tax, $default_country, $product_list);
+	// public function getPackageShippingCost($id_carrier = null, $use_tax = true, Country $default_country = null, $product_list = null, $id_zone = null)
+	// {
+	// 	include_once(_PS_ROOT_DIR_.'/modules/avalaratax/avalaratax.php');
 
-		/* Retrieve the original carrier fee tax excluded */
-		$tax_excluded_cost = parent::getPackageShippingCost((int)$id_carrier, false, $default_country, $product_list);
+	// 	/* Instanciate the Avalara module and check if active */
+	// 	$avalara = new AvalaraTax();
+	// 	if (!$avalara->active)
+	// 		return parent::getPackageShippingCost((int)$id_carrier, $use_tax, $default_country, $product_list);
 
-		/* If we want price without tax or if this carrier is tax free, return this price */
-		if (!(int)$this->{Configuration::get('PS_TAX_ADDRESS_TYPE')} || !$use_tax)
-			return $tax_excluded_cost;
+	// 	/* Retrieve the original carrier fee tax excluded */
+	// 	$tax_excluded_cost = parent::getPackageShippingCost((int)$id_carrier, false, $default_country, $product_list);
 
-		/* If there is no cache or cache expired, we regenerate it */
-		if (CacheTools::checkCarrierCache($this))
-			return parent::getPackageShippingCost((int)$id_carrier, $use_tax, $default_country, $product_list);
+	// 	/* If we want price without tax or if this carrier is tax free, return this price */
+	// 	if (!(int)$this->{Configuration::get('PS_TAX_ADDRESS_TYPE')} || !$use_tax)
+	// 		return $tax_excluded_cost;
 
-		/* If we do already know it, then return it */
-		return $tax_excluded_cost + (float)CacheTools::getCarrierTaxAmount($this);
-	}
+	// 	/* If there is no cache or cache expired, we regenerate it */
+	// 	if (CacheTools::checkCarrierCache($this))
+	// 		return parent::getPackageShippingCost((int)$id_carrier, $use_tax, $default_country, $product_list);
+
+	// 	/* If we do already know it, then return it */
+	// 	return $tax_excluded_cost + (float)CacheTools::getCarrierTaxAmount($this);
+	// }
 }

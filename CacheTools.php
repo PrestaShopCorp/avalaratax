@@ -57,7 +57,7 @@ class CacheTools
 		$tmp = array('id_carrier' => (int)$cart->id_carrier, 'id_address' => (int)$cart->{Configuration::get('PS_TAX_ADDRESS_TYPE')});
 		foreach ($cart->getProducts() as $product)
 			$tmp[] = array('id_product' => (int)$product['id_product'], 'id_product_attribute' => (int)$product['id_product_attribute'], 'quantity' => (int)$product['quantity']);
-			
+
 		$result = Db::getInstance()->getRow('
 		SELECT `cart_hash`, `update_date`
 		FROM `'._DB_PREFIX_.'avalara_carrier_cache`
@@ -93,7 +93,7 @@ class CacheTools
 			$getTaxResult = $avalaraModule->getTax(array($avalaraProducts), array('type' => 'SalesOrder', 'DocCode' => 1, 'taxable' => $taxable));
 
 			// Store the taxrate in cache
-			// If taxrate exists (but it's outdated), then update, else insert (REPLACE INTO)			
+			// If taxrate exists (but it's outdated), then update, else insert (REPLACE INTO)
 			if (isset($getTaxResult['TotalTax']) && isset($getTaxResult['TotalAmount']))
 			{
 				$total_tax = $getTaxResult['TotalTax'];
@@ -143,7 +143,7 @@ class CacheTools
 			}
 		}
 	}
-	
+
 	public static function getCarrierTaxAmount(Cart $cart)
 	{
 		$region = null;
