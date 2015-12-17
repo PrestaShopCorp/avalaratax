@@ -1,5 +1,7 @@
 <?php
 
+// TODO: This file is no longer necessary and should be removed before the next release
+
 class Carrier extends CarrierCore
 {
   public static function getIdTaxRulesGroupByIdCarrier($id_carrier, Context $context = null)

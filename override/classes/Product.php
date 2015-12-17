@@ -1,5 +1,7 @@
 <?php
 
+// TODO: This file is no longer necessary and should be removed before the next release
+
 class Product extends ProductCore
 {
 

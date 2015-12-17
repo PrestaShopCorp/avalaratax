@@ -29,6 +29,8 @@
 // 	2. If not cached: retrieve it from Avalara and put it in the cache table
 // */
 
+// TODO: Remove this file before our next release
+
 // include(dirname(__FILE__).'/../../config/config.inc.php');
 // include(_PS_ROOT_DIR_.'/init.php');
 // include(_PS_MODULE_DIR_.'avalaratax/avalaratax.php');

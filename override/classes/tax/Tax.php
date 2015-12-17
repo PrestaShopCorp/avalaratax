@@ -1,5 +1,7 @@
 <?php
 
+// TODO: This file is likely no longer necessary and should be removed for our next release
+
 class Tax extends TaxCore
 {
 	/**

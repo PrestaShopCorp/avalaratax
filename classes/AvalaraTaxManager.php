@@ -1,5 +1,7 @@
 <?php
 
+// TODO: This file should be deleted before our next release
+
 require_once('AvalaraTaxCalculator.php');
 
 class AvalaraTaxManager implements TaxManagerInterface
@@ -21,10 +23,6 @@ class AvalaraTaxManager implements TaxManagerInterface
 
     public function getTaxCalculator()
     {
-      // Prestashop decided not to expose the address->id or the street address
-      // Only postcode, state and country ids are available
-      // we should submit a pull request to get these values as they are necessary to calculate some
-      // tax edge cases
       static $tax_enabled = null;
 
       // Check if we already have a tax calculator
@@ -71,6 +69,9 @@ class AvalaraTaxManager implements TaxManagerInterface
 
       if(empty($this->address->id_state) || empty($this->address->postcode))
         return 0; // Cannot calculate tax without at minimum both state and postcode
+
+      // Always return zero as we are now going to rely on different cart hooks to inject tax information
+      return 0;
 
       // Send request to Avalara
       $avalara = new AvalaraTax();

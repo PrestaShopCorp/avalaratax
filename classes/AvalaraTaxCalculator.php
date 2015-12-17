@@ -1,5 +1,7 @@
 <?php
 
+// TODO: This file should be deleted before our next release
+
 class AvalaraTaxCalculator extends TaxCalculatorCore
 {
   public $count = 0;
@@ -8,15 +10,6 @@ class AvalaraTaxCalculator extends TaxCalculatorCore
 
   public function __construct(array $taxes = array(), $computation_method = TaxCalculator::COMBINE_METHOD)
   {
-    // sanity check
-    // foreach ($taxes as $tax) {
-    //   if (!($tax instanceof Tax)) {
-    //     throw new Exception('Invalid Tax Object');
-    //   }
-    // }
-
-    // $this->taxes = $taxes;
-
     // Our tax calculator ignores any Tax Rules from Prestashop
     // instead we look for tax code and tax rate values
     $this->taxes = array();
