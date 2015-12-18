@@ -214,15 +214,6 @@ class AvalaraTax extends Module
   protected static function getOverrideInfo()
   {
     return array(
-      'Tax.php' => array(
-        'source' => 'override/classes/tax/Tax.php',
-        'dest' => 'override/classes/Tax.php',
-        'md5' => array(
-          '1.1' => '5d9e318d673bfa723b02f14f952e0a7a',
-          '2.3' => '86c900cd6fff286aa6a52df2ff72228a',
-          '3.0.2' => 'c558c0b15877980134e301af34e42c3e',
-        )
-      ),
       'Cart.php' => array(
         'source' => 'override/classes/Cart.php',
         'dest' => 'override/classes/Cart.php',
@@ -499,7 +490,7 @@ class AvalaraTax extends Module
           $new_order_total = $order_total;
           break;
         default:
-          $new_order_total = $order_total; // TODO: Consider throwing an error?
+          $new_order_total = $order_total; // We could return, or throw an error here
       }
     }
 
@@ -591,7 +582,8 @@ class AvalaraTax extends Module
     }
 
     // Obtain tax information from Avalara for this cart
-    $tax_result = $this->getTax($s_products, array('type' => 'SalesOrder', 'DocCode' => 1, 'cart' => $cart, 'taxable' => true)); // TODO: Consider swtich on 'taxable' value based on config
+    // Consider swtich on 'taxable' value based on config
+    $tax_result = $this->getTax($s_products, array('type' => 'SalesOrder', 'DocCode' => 1, 'cart' => $cart, 'taxable' => true));
 
     $total_tax = (float)$tax_result['TotalTax'];
 
