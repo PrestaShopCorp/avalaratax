@@ -157,21 +157,14 @@ class AvalaraTax extends Module
     KEY `cart_id` (`cart_id`))'))
       return false;
 
-    # TODO: Remove old hooks before next release
     if (!parent::install() ||
-      //!$this->registerHook('leftColumn') ||
       !$this->registerHook('updateOrderStatus') ||
       !$this->registerHook('cancelProduct') ||                        // Old PS 1.4 hook
       !$this->registerHook('actionProductCancel') ||                  // New PS 1.5 > hook
       !$this->registerHook('adminOrder') ||
       !$this->registerHook('backOfficeTop') ||
       !$this->registerHook('header') ||
-      //!$this->registerHook('taxManager') ||
       !$this->registerHook('actionCartSave') ||
-      //!$this->registerHook('actionCartSummary') ||
-      //!$this->registerHook('displayOrderConfirmation') ||
-      //!$this->registerHook('displayShoppingCartFooter') ||
-      //!$this->registerHook('displayShoppingCart') ||
       !$this->registerHook('actionOrderDetail') ||
       !$this->registerHook('actionCartGetOrderTotal') ||
       !$this->registerHook('actionCartGetPackageShippingCost') ||
@@ -420,7 +413,7 @@ class AvalaraTax extends Module
     $s_cart = array('cart_id' => $cart->id,
       'customer_id' => (int)$cart->id_customer,
       'customer_tax_address_id' => (int)$cart->id_address_delivery,
-      'discounts' => $cart->getOrderedCartRulesIds(),
+      'discounts' => $this->getOrderedCartRulesIds($cart),
       'carrier' => (int)$cart->id_carrier,
       'products' => $s_products);
 
@@ -580,7 +573,9 @@ class AvalaraTax extends Module
   {
     // Make sure we don't replace our cart taxes cache if we already have valid values for this cart
     if ($this->checkForValidCartCache($cart_hash) == true) {
-      return true;
+      if(version_compare(_PS_VERSION_, '1.6.1', '>=')) {
+        return true; // This caching optimization only works for Prestashop 1.6.1 and greater
+      }
     }
 
     $total_products_tax = 0.00;
@@ -596,7 +591,7 @@ class AvalaraTax extends Module
     }
 
     // Obtain tax information from Avalara for this cart
-    $tax_result = $this->getTax($s_products, array('type' => 'SalesOrder', 'DocCode' => 1, 'cart' => $cart, 'taxable' => true)); // TODO: Swtich on 'taxable' value based on config
+    $tax_result = $this->getTax($s_products, array('type' => 'SalesOrder', 'DocCode' => 1, 'cart' => $cart, 'taxable' => true)); // TODO: Consider swtich on 'taxable' value based on config
 
     $total_tax = (float)$tax_result['TotalTax'];
 
@@ -631,6 +626,32 @@ class AvalaraTax extends Module
     return !$result ? false : true;
   }
 
+  // Method originally from Cart.php (1.6.x and greater), extracted out here for backwards compatibility with 1.5.x
+  public function getOrderedCartRulesIds($cart, $filter = CartRule::FILTER_ACTION_ALL)
+  {
+    $cache_key = 'Cart::getCartRules_'.$cart->id.'-'.$filter.'-ids';
+    if (!Cache::isStored($cache_key)) {
+      $result = Db::getInstance()->executeS('
+        SELECT cr.`id_cart_rule`
+        FROM `'._DB_PREFIX_.'cart_cart_rule` cd
+        LEFT JOIN `'._DB_PREFIX_.'cart_rule` cr ON cd.`id_cart_rule` = cr.`id_cart_rule`
+        LEFT JOIN `'._DB_PREFIX_.'cart_rule_lang` crl ON (
+          cd.`id_cart_rule` = crl.`id_cart_rule`
+          AND crl.id_lang = '.(int)$cart->id_lang.'
+        )
+        WHERE `id_cart` = '.(int)$cart->id.'
+        '.($filter == CartRule::FILTER_ACTION_SHIPPING ? 'AND free_shipping = 1' : '').'
+        '.($filter == CartRule::FILTER_ACTION_GIFT ? 'AND gift_product != 0' : '').'
+        '.($filter == CartRule::FILTER_ACTION_REDUCTION ? 'AND (reduction_percent != 0 OR reduction_amount != 0)' : '')
+        .' ORDER BY cr.priority ASC'
+        );
+
+      Cache::store($cache_key, $result);
+    } else {
+      $result = Cache::retrieve($cache_key);
+    }
+  }
+
   //*** End Cart Hooks ***********************************************
 
   //******************************************************************
@@ -646,7 +667,7 @@ class AvalaraTax extends Module
   public function hookCancelProduct($params)
   {
     // Make sure we don't execute this hook in versions greater than 1.4
-    if (version_compare(_PS_VERSION_, '1.5', '>') {
+    if (version_compare(_PS_VERSION_, '1.5', '>')) {
       return false;
     }
 
@@ -845,7 +866,7 @@ class AvalaraTax extends Module
             $("#content #form-tax").hide();
             $("#content #form-tax_rules_group").hide();
             $("#desc-tax-new").hide();
-            $(\'#content div:first\').append(\'<div class="warn alert alert-danger">'.$this->l('Tax rules are overwritten by Avalara Tax Module. Please make sure to disable any tax options below.').'</div>\');
+            $(\'#content div:first\').append(\'<div class="warn alert alert-danger">'.$this->l('Tax rules are overwritten by Avalara Tax Module. Please make sure "Enable Tax" and "Use Eco Tax" are set to "No"').'</div>\');
           });
           </script>';
       }
@@ -853,10 +874,10 @@ class AvalaraTax extends Module
       elseif (version_compare(_PS_VERSION_, '1.5', '>')){
         return '<script type="text/javascript">
         $(function() {
-                $(\'#content form\').hide();
-                $(\'#desc-tax-new\').hide();
-                $(\'#desc-tax-save\').hide();
-                $(\'#content div:first\').append(\'<div class="warn">'.$this->l('Tax rules are overwritten by Avalara Tax Module.').'</div>\');
+          $(\'#desc-tax-new\').hide();
+          $("#content form").not("#tax_form").hide();
+          $("#content #form-tax_rules_group").hide();
+          $(\'#content div:first\').append(\'<div class="warn alert alert-danger">'.$this->l('Tax rules are overwritten by Avalara Tax Module. Please make sure "Enable Tax" and "Use Eco Tax" are set to "No"').'</div>\');
         });
         </script>';
       }else{
@@ -879,50 +900,6 @@ class AvalaraTax extends Module
     // Because of this, pages won't display tax values. Injecting these smarty values forces
     // all pages to display tax information
     $this->context->smarty->assign(array('use_taxes' => 1, 'show_taxes' => true));
-
-
-    // Everything below here is for the previous method of tracking Cart progress and fetching taxes
-    // Aside from adding backwards compatibiltiy for version 1.4, it may be useless now
-
-    // if (!$this->context->cart || ((int)$this->context->cart->id_customer && !(int)$this->context->cart->{Configuration::get('PS_TAX_ADDRESS_TYPE')}))
-    //  $id_address = (int)(Db::getInstance()->getValue('SELECT `id_address` FROM `'._DB_PREFIX_.'address` WHERE `id_customer` = '.(int)($this->context->cart->id_customer).' AND `deleted` = 0 ORDER BY `id_address`'));
-    // else
-    //  $id_address = $this->context->cart->{Configuration::get('PS_TAX_ADDRESS_TYPE')};
-
-    // if (!(int)$id_address)
-    //  return ;
-    // return '<script type="text/javascript">
-    //    function refresh_taxes(count)
-    //    {
-    //      $.ajax({
-    //        type : \'POST\',
-    //        url : \''.$this->_path.'\' + \'ajax.php\',
-    //        data : {
-    //          \'id_cart\': "'.(int)$this->context->cart->id.'",
-    //          \'id_lang\': "'.(int)$this->context->cookie->id_lang.'",
-    //          \'id_address\': "'.(int)$id_address.'",
-    //          \'ajax\': "getProductTaxRate",
-    //          \'token\': "'.md5(_COOKIE_KEY_.Configuration::get('PS_SHOP_NAME')).'",
-    //        },
-    //        dataType: \'json\',
-    //        success : function(d) {
-    //          if (d.hasError == false && d.cached_tax == true)
-    //                  $(\'#total_tax\').html($(\'body\').data(\'total_tax\'));
-    //          else if (d.hasError == false && d.cached_tax == false)
-    //                  $(\'#total_tax\').html(d.total_tax);
-    //          else
-    //                  $(\'#total_tax\').html(\''.$this->l('Error while calculating taxes').'\');
-    //        }
-    //      });
-    //    }
-
-    // $(function() {
-    //  /* ajax call to cache taxes product taxes that exist in the current cart */
-    //  $(\'body\').data(\'total_tax\', $(\'#total_tax\').text());
-    //  $(\'#total_tax\').html(\'<img src="img/loader.gif" alt="" />\');
-    //  refresh_taxes(1);
-    // });
-    // </script>';
   }
 
   /******************************************************************/
@@ -1652,165 +1629,6 @@ else
       $buffer['Exception']['LastResponse'] = Tools::safeOutput($client->__getLastResponse());
     }
     return $buffer;
-  }
-
-  // TODO: This is an old method we used for our first taxCalculator attempt
-  // we can safely delete it before our next release
-  public function getSingleTaxRate($address, $tax_code)
-  {
-    $confValues = Configuration::getMultiple(array('AVALARATAX_COMPANY_CODE', 'AVALARATAX_ADDRESS_LINE1',
-                    'AVALARATAX_ADDRESS_LINE2', 'AVALARATAX_CITY', 'AVALARATAX_STATE', 'AVALARATAX_ZIP_CODE'));
-
-    $this->_connectToAvalara();
-
-    $client = new TaxServiceSoap(Configuration::get('AVALARATAX_MODE'));
-    $request = new GetTaxRequest();
-
-    $type = 'SalesOrder'; // SalesOrder: Occurs when customer adds product to the cart (generally to check how much the tax will be)
-    $request->setDocType(DocumentType::$SalesOrder);
-
-    // Apply Address formatting
-    if (isset($address))
-    {
-      if (!empty($address->id_state))
-        $state = new State((int)$address->id_state);
-
-      $addressDest = array();
-      $addressDest['Line1'] = $address->address1;
-      $addressDest['Line2'] = $address->address2;
-      $addressDest['City'] = $address->city;
-      $addressDest['Region'] = isset($state) ? $state->iso_code : '';
-      $addressDest['PostalCode'] = $address->postcode;
-      $addressDest['Country'] = Country::getIsoById($address->id_country);
-
-      // Address normalization won't matter when we're only using State (region) and zip code
-
-      // Try to normalize the address depending on option in the BO
-      // if (Configuration::get('AVALARATAX_ADDRESS_NORMALIZATION'))
-      // {
-      //  $last_update = Db::getInstance()->getValue('SELECT date_add FROM '._DB_PREFIX_.'avalara_address_validation_cache WHERE id_address = '.(int)$address->id);
-      //  if (empty($last_update) || (strtotime($address->date_upd) > strtotime($last_update)))
-      //  {
-      //    $normalizedAddress = $this->validateAddress($address);
-      //    Db::getInstance()->Execute('INSERT INTO '._DB_PREFIX_.'avalara_address_validation_cache (id_address, date_add) VALUES ('.(int)$address->id.', \''.pSQL(date('Y-m-d H:i:s')).'\') ON DUPLICATE KEY UPDATE date_add = \''.pSQL(date('Y-m-d H:i:s')).'\'');
-      //  }
-      // }
-
-      // if (isset($normalizedAddress['Normalized']))
-      //  $addressDest = $normalizedAddress['Normalized'];
-
-      // Add Destination address (Customer address)
-      $destination = new AvalaraAddress();
-      //$destination->setLine1($addressDest['Line1']);
-      //$destination->setLine2($addressDest['Line2']);
-      //$destination->setCity($addressDest['City']);
-      $destination->setRegion($addressDest['Region']);
-      $destination->setPostalCode($addressDest['PostalCode']); // For now we are using only postcode and region (state)
-      //$destination->setCountry($addressDest['Country']);
-
-      $request->setDestinationAddress($destination);
-    }
-
-    // Origin Address (Store Address or address setup in BO)
-    $origin = new AvalaraAddress();
-    $origin->setLine1(isset($confValues['AVALARATAX_ADDRESS_LINE1']) ? $confValues['AVALARATAX_ADDRESS_LINE1'] : '');
-    $origin->setLine2(isset($confValues['AVALARATAX_ADDRESS_LINE2']) ? $confValues['AVALARATAX_ADDRESS_LINE2'] : '');
-    $origin->setCity(isset($confValues['AVALARATAX_CITY']) ? $confValues['AVALARATAX_CITY'] : '');
-    $origin->setRegion(isset($confValues['AVALARATAX_STATE']) ? $confValues['AVALARATAX_STATE'] : '');
-    $origin->setPostalCode(isset($confValues['AVALARATAX_ZIP_CODE']) ? $confValues['AVALARATAX_ZIP_CODE'] : '');
-    $request->setOriginAddress($origin);
-
-    $request->setCompanyCode(isset($confValues['AVALARATAX_COMPANY_CODE']) ? $confValues['AVALARATAX_COMPANY_CODE'] : '');
-
-    if (isset($address->vat_number) && !empty($address->vat_number) && $address->vat_number != 'undefined')
-      $request->setBusinessIdentificationNo($address->vat_number);
-
-    //$orderId = isset($params['cart']) ? (int)$params['cart']->id : (int)$params['DocCode'];
-    $orderId = $tax_code; // TODO: Although we are not committing an actual order it may be useful to come up with some unique Id schema
-    $nowTime = date('mdHis');
-
-    // Attempt to get a customer code
-    if (isset($this->context->cookie->id_customer))
-      $customerCode = $this->context->cookie->id_customer;
-    else
-    {
-      if (isset($params['DocCode']))
-        $id_order = (int)$params['DocCode'];
-      elseif (isset($_POST['id_order']))
-        $id_order = (int)$_POST['id_order'];
-      elseif (isset($params['id_order']))
-        $id_order = (int)$params['id_order'];
-      else
-        $id_order = 0;
-
-      $customerCode = (int)Db::getInstance()->getValue('SELECT `id_customer` FROM `'._DB_PREFIX_.'orders` WHERE `id_order` = '.(int)$id_order);
-    }
-
-    $request->setDocCode('Order '.Tools::safeOutput($orderId)); // Order Id - has to be float due to the . and more numbers for returns
-    $request->setDocDate(date('Y-m-d'));          // date
-    $request->setCustomerCode('CustomerID: '.(int)$customerCode); // string Required
-
-    $request->setDiscount(0.00); // decimal
-
-    $request->setDetailLevel(DetailLevel::$Tax);      // Summary or Document or Line or Tax or Diagnostic
-
-    // Add single line item (may be product or shipping as we only care about the tax code at this point)
-    $lines = array();
-    $line = new Line();
-    $line->setNo(0);
-    $line->setItemCode($tax_code); // We don't care about storing the item code as we only want to cache on tax codes for this request
-    $line->setDescription("");
-    $line->setTaxCode($tax_code);
-    $line->setQty(1); // Always use one for this request, as we are just calculating a rate (the total amount doesn't matter)
-    $line->setAmount((float)100); // Always use 1000 as we are just calculating a rate
-    $line->setDiscounted(true); // This shouldn't matter for this single line request where we default discount to 0.00
-
-    $lines[] = $line;
-
-    $request->setLines($lines);
-    $buffer = array();
-    try
-    {
-      $result = $client->getTax($request);
-      $buffer['ResultCode'] = Tools::safeOutput($result->getResultCode());
-      if ($result->getResultCode() == SeverityLevel::$Success)
-      {
-        $buffer['DocCode'] = Tools::safeOutput($request->getDocCode());
-        $buffer['TotalAmount'] = Tools::safeOutput($result->getTotalAmount());
-        $buffer['TotalTax'] = Tools::safeOutput($result->getTotalTax());
-        $buffer['NowTime'] = $nowTime;
-        foreach ($result->getTaxLines() as $ctl)
-        {
-          $buffer['TaxLines'][$ctl->getNo()]['GetTax'] = Tools::safeOutput($ctl->getTax());
-          $buffer['TaxLines'][$ctl->getNo()]['TaxCode'] = Tools::safeOutput($ctl->getTaxCode());
-
-          foreach ($ctl->getTaxDetails() as $ctd)
-          {
-            $buffer['TaxLines'][$ctl->getNo()]['TaxDetails']['JurisType'] = Tools::safeOutput($ctd->getJurisType());
-            $buffer['TaxLines'][$ctl->getNo()]['TaxDetails']['JurisName'] = Tools::safeOutput($ctd->getJurisName());
-            $buffer['TaxLines'][$ctl->getNo()]['TaxDetails']['Region'] = Tools::safeOutput($ctd->getRegion());
-            $buffer['TaxLines'][$ctl->getNo()]['TaxDetails']['Rate'] = Tools::safeOutput($ctd->getRate());
-            $buffer['TaxLines'][$ctl->getNo()]['TaxDetails']['Tax'] = Tools::safeOutput($ctd->getTax());
-          }
-        }
-      }
-      else
-        // For the failure state collect all error messages so we can display them later
-        foreach ($result->getMessages() as $msg)
-        {
-          $buffer['Messages']['Name'] = Tools::safeOutput($msg->getName());
-          $buffer['Messages']['Summary'] = Tools::safeOutput($msg->getSummary());
-        }
-    }
-    catch (SoapFault $exception)
-    {
-      $buffer['Exception']['FaultString'] = Tools::safeOutput($exception->faultstring);
-      $buffer['Exception']['LastRequest'] = Tools::safeOutput($client->__getLastRequest());
-      $buffer['Exception']['LastResponse'] = Tools::safeOutput($client->__getLastResponse());
-    }
-
-    //return $buffer;
-    return (($buffer['TotalTax'] / $buffer['TotalAmount']) * 100); // Calculate and return the tax rate
   }
 
   /*
