@@ -9,7 +9,7 @@
  * @author	Avalara
  * @copyright � 2004 - 2011 Avalara, Inc.  All rights reserved.
  * @package   Address
- * 
+ *
  */
 
 class AddressType extends Enum
@@ -20,7 +20,7 @@ class AddressType extends Enum
 	public static $POBox				= 'P';
 	public static $RuralRoute			= 'R';
 	public static $StreetOrResidential	= 'S';
-	
+
 	public static function Values()
 	{
 		return array(

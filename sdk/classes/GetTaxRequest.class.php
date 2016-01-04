@@ -9,7 +9,7 @@
  * @see GetTaxResult
  *
  * @author    Avalara
- * @copyright © 2004 - 2011 Avalara, Inc.  All rights reserved.
+ * @copyright Â© 2004 - 2011 Avalara, Inc.  All rights reserved.
  * @package   Tax
  */
 
@@ -269,17 +269,17 @@ class GetTaxRequest
      * </p>
      * <p>
      * The standard values for the CustomerUsageType (A-L).<br/>
-        A – Federal Government<br/>
-        B – State/Local Govt.<br/>
-        C – Tribal Government<br/>
-        D – Foreign Diplomat<br/>
-        E – Charitable Organization<br/>
-        F – Religious/Education<br/>
-        G – Resale<br/>
-        H – Agricultural Production<br/>
-        I – Industrial Prod/Mfg.<br/>
-        J – Direct Pay Permit<br/>
-        K – Direct Mail<br/>
+        A â€“ Federal Government<br/>
+        B â€“ State/Local Govt.<br/>
+        C â€“ Tribal Government<br/>
+        D â€“ Foreign Diplomat<br/>
+        E â€“ Charitable Organization<br/>
+        F â€“ Religious/Education<br/>
+        G â€“ Resale<br/>
+        H â€“ Agricultural Production<br/>
+        I â€“ Industrial Prod/Mfg.<br/>
+        J â€“ Direct Pay Permit<br/>
+        K â€“ Direct Mail<br/>
         L - Other<br/>
      * </p>
      * @param customerUsageType

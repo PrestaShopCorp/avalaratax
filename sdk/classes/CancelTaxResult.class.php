@@ -6,16 +6,16 @@
 /**
  * Result data returned from {@link TaxSvcSoap#cancelTax}
  * @see CancelTaxRequest
- *  
+ *
  * @author    Avalara
- * @copyright © 2004 - 2011 Avalara, Inc.  All rights reserved.
+ * @copyright Â© 2004 - 2011 Avalara, Inc.  All rights reserved.
  * @package   Tax
- * 
+ *
  */
 
 class CancelTaxResult // extends BaseResult
 {
-    
+
 
 // BaseResult innards - workaround a bug in SoapClient
 
