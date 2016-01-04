@@ -1839,10 +1839,10 @@ else
       {
         Db::getInstance()->Execute('INSERT INTO '._DB_PREFIX_.'avalara_address_validation_cache (id_address, date_add) VALUES ('.(int)$address->id.', \''.pSQL(date('Y-m-d H:i:s')).'\') ON DUPLICATE KEY UPDATE date_add = \''.pSQL(date('Y-m-d H:i:s')).'\'');
 
-        Tools::getValue('address1') = Tools::safeOutput($normalizedAddress['Normalized']['Line1']);
-        Tools::getValue('address2') = Tools::safeOutput($normalizedAddress['Normalized']['Line2']);
-        Tools::getValue('city') = Tools::safeOutput($normalizedAddress['Normalized']['City']);
-        Tools::getValue('postcode') =  Tools::safeOutput(Tools::substr($normalizedAddress['Normalized']['PostalCode'], 0, strpos($normalizedAddress['Normalized']['PostalCode'], '-')));
+        $_POST['address1'] = Tools::safeOutput($normalizedAddress['Normalized']['Line1']);
+        $_POST['address2'] = Tools::safeOutput($normalizedAddress['Normalized']['Line2']);
+        $_POST['city'] = Tools::safeOutput($normalizedAddress['Normalized']['City']);
+        $_POST['postcode'] =  Tools::safeOutput(Tools::substr($normalizedAddress['Normalized']['PostalCode'], 0, strpos($normalizedAddress['Normalized']['PostalCode'], '-')));
       }
       return $normalizedAddress;
     }

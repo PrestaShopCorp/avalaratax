@@ -24,7 +24,6 @@
 *  International Registered Trademark & Property of PrestaShop SA
 */
 
-
 if (version_compare(_PS_VERSION_, '1.6.1', '>=')) {
 	class Cart extends CartCore
 	{
@@ -741,6 +740,7 @@ if (version_compare(_PS_VERSION_, '1.6.1', '>=')) {
 				if ($this->_taxCalculationMethod == PS_TAX_EXC)
 				{
 					// Here taxes are computed only once the quantity has been applied to the product price
+          $null = null; // The $null variable reference hack for getProductPrice()
 					$price = Product::getPriceStatic(
 						(int)$product['id_product'],
 						false,
@@ -776,6 +776,7 @@ if (version_compare(_PS_VERSION_, '1.6.1', '>=')) {
 				else
 				{
 					if ($with_taxes)
+            $null = null; // The $null variable reference hack for getProductPrice()
 						$price = Product::getPriceStatic(
 							(int)$product['id_product'],
 							true,
@@ -795,6 +796,7 @@ if (version_compare(_PS_VERSION_, '1.6.1', '>=')) {
 							$virtual_context
 						);
 					else
+            $null = null; // The $null variable reference hack for getProductPrice()
 						$price = Product::getPriceStatic(
 							(int)$product['id_product'],
 							false,
