@@ -254,8 +254,7 @@ class AvalaraTax extends Module
     {
         /** In v1.5, we do not remove override files */
         if (version_compare(_PS_VERSION_, '1.5', '<')) {
-            foreach (self::getOverrideInfo() as $key => $params)
-            {
+            foreach (self::getOverrideInfo() as $key => $params) {
                 if (!file_exists(_PS_ROOT_DIR_.'/'.$params['dest'])) {
                     continue;
                 }
@@ -264,8 +263,7 @@ class AvalaraTax extends Module
                 $removed = false;
 
                 foreach ($params['md5'] as $hash) {
-                    if ($md5 == $hash)
-                    {
+                    if ($md5 == $hash) {
                         if (unlink(_PS_ROOT_DIR_.'/'.$params['dest'])) {
                             $removed = true;
                         }
@@ -286,8 +284,7 @@ class AvalaraTax extends Module
     protected function overrideFiles()
     {
         /** In v1.5, we do not copy the override files */
-        if (version_compare(_PS_VERSION_, '1.5', '<') && $this->removeOverrideFiles())
-        {
+        if (version_compare(_PS_VERSION_, '1.5', '<') && $this->removeOverrideFiles()) {
             /** Check if the override directories exists */
             if (!is_dir(_PS_ROOT_DIR_.'/override/classes/')) {
                 mkdir(_PS_ROOT_DIR_.'/override/classes/', 0777, true);
@@ -305,6 +302,7 @@ class AvalaraTax extends Module
                 }
             }
         }
+
         return !Tools::getIsset($this->_errors) || !$this->_errors || !count($this->_errors);
     }
 
@@ -334,16 +332,14 @@ class AvalaraTax extends Module
     // $params['id_order_detail']
     public function hookActionProductCancel($params)
     {
-        if (Tools::getIsset(Tools::getValue('cancelProduct')))
-        {
+        if (Tools::getIsset(Tools::getValue('cancelProduct'))) {
             $order = new Order((int)Tools::getValue('id_order'));
 
             if (!Validate::isLoadedObject($order)) {
                 return false;
             }
 
-            if ($order->invoice_number)
-            {
+            if ($order->invoice_number) {
                 // Get all the cancel product's IDs
                 $cancelledIdsOrderDetail = array();
 
@@ -397,8 +393,13 @@ class AvalaraTax extends Module
                 $commitResult = $this->getTax($products, array('type' => 'ReturnInvoice', 'DocCode' => (int)Tools::getValue('id_order')));
 
                 if ($commitResult['ResultCode'] == 'Warning' || $commitResult['ResultCode'] == 'Error' || $commitResult['ResultCode'] == 'Exception') {
-                    echo $this->_displayConfirmation($this->l('The following error was generated while cancelling the orders you selected. <br /> - '.
-                            Tools::safeOutput($commitResult['Messages']['Summary'])), 'error');
+                    echo $this->_displayConfirmation(
+                        $this->l(
+                            'The following error was generated while cancelling the orders you selected. <br /> - '.
+                            Tools::safeOutput($commitResult['Messages']['Summary'])
+                        ),
+                        'error'
+                    );
                 } else {
                     // This seems to be causing returns to improperly adjust the commit date of the orignal transaction
                     // $this->commitToAvalara(array('id_order' => (int)Tools::getValue('id_order')));
@@ -421,7 +422,7 @@ class AvalaraTax extends Module
 
         // In each row of products array we are looking for product id, quantity and
         // a pretax total that includes discounts
-        foreach($products as $prod){
+        foreach ($products as $prod) {
             $s_products[] = array('id_product' => (int)$prod['id_product'],
                 'name' => $prod['name'],
                 'description_short' => $prod['description_short'],
@@ -599,7 +600,7 @@ class AvalaraTax extends Module
     {
         // Make sure we don't replace our cart taxes cache if we already have valid values for this cart
         if ($this->checkForValidCartCache($cart_hash) == true) {
-            if(version_compare(_PS_VERSION_, '1.6.1', '>=')) {
+            if (version_compare(_PS_VERSION_, '1.6.1', '>=')) {
                 return true; // This caching optimization only works for Prestashop 1.6.1 and greater
             }
         }
@@ -611,7 +612,7 @@ class AvalaraTax extends Module
         // Rename keys of products array for compatibility with old getTax method
         $s_products = $s_cart['products'];
 
-        foreach ($s_products as $k=>$v){
+        foreach ($s_products as $k => $v) {
             $s_products[$k]['total'] = $s_products[$k]['pretax_total'];
             unset($s_products[$k]['pretax_total']);
         }
@@ -629,14 +630,14 @@ class AvalaraTax extends Module
 
         $total_shipping_tax = (float)$shipping_line['GetTax'];
 
-        foreach ($tax_lines as $tax_line){
+        foreach ($tax_lines as $tax_line) {
             $total_products_tax += (float)$tax_line['GetTax'];
         }
 
-        Db::getInstance()->Execute('
-            REPLACE INTO `'._DB_PREFIX_.'avalara_cart_cache` (`cart_id`, `cart_hash`, `total_tax`, `total_products_tax`, `total_shipping_tax`)
+        Db::getInstance()->Execute(
+            'REPLACE INTO `'._DB_PREFIX_.'avalara_cart_cache` (`cart_id`, `cart_hash`, `total_tax`, `total_products_tax`, `total_shipping_tax`)
             VALUES ('.$s_cart['cart_id'].', \''.$cart_hash.'\', '.$total_tax.', '.$total_products_tax.', '.$total_shipping_tax.')'
-                );
+        );
 
         return true;
     }
@@ -658,8 +659,8 @@ class AvalaraTax extends Module
     {
         $cache_key = 'Cart::getCartRules_'.$cart->id.'-'.$filter.'-ids';
         if (!Cache::isStored($cache_key)) {
-            $result = Db::getInstance()->executeS('
-                SELECT cr.`id_cart_rule`
+            $result = Db::getInstance()->executeS(
+                'SELECT cr.`id_cart_rule`
                 FROM `'._DB_PREFIX_.'cart_cart_rule` cd
                 LEFT JOIN `'._DB_PREFIX_.'cart_rule` cr ON cd.`id_cart_rule` = cr.`id_cart_rule`
                 LEFT JOIN `'._DB_PREFIX_.'cart_rule_lang` crl ON (
@@ -671,7 +672,7 @@ class AvalaraTax extends Module
                 '.($filter == CartRule::FILTER_ACTION_GIFT ? 'AND gift_product != 0' : '').'
                 '.($filter == CartRule::FILTER_ACTION_REDUCTION ? 'AND (reduction_percent != 0 OR reduction_amount != 0)' : '')
                 .' ORDER BY cr.priority ASC'
-                );
+            );
 
             Cache::store($cache_key, $result);
         } else {
@@ -698,16 +699,14 @@ class AvalaraTax extends Module
             return false;
         }
 
-        if (Tools::getIsset(Tools::getValue('cancelProduct')))
-        {
+        if (Tools::getIsset(Tools::getValue('cancelProduct'))) {
             $order = new Order((int)Tools::getValue('id_order'));
 
             if (!Validate::isLoadedObject($order)) {
                 return false;
             }
 
-            if ($order->invoice_number)
-            {
+            if ($order->invoice_number) {
                 // Get all the cancel product's IDs
                 $cancelledIdsOrderDetail = array();
 
@@ -758,8 +757,13 @@ class AvalaraTax extends Module
                 // Send to Avalara
                 $commitResult = $this->getTax($products, array('type' => 'ReturnInvoice', 'DocCode' => (int)Tools::getValue('id_order')));
                 if ($commitResult['ResultCode'] == 'Warning' || $commitResult['ResultCode'] == 'Error' || $commitResult['ResultCode'] == 'Exception') {
-                    echo $this->_displayConfirmation($this->l('The following error was generated while cancelling the orders you selected. <br /> - '.
-                            Tools::safeOutput($commitResult['Messages']['Summary'])), 'error');
+                    echo $this->_displayConfirmation(
+                        $this->l(
+                            'The following error was generated while cancelling the orders you selected. <br /> - '.
+                            Tools::safeOutput($commitResult['Messages']['Summary'])
+                        ),
+                        'error'
+                    );
                 } else {
                     $this->commitToAvalara(array('id_order' => (int)Tools::getValue('id_order')));
                     echo $this->_displayConfirmation($this->l('The products you selected were cancelled.'));
@@ -783,8 +787,7 @@ class AvalaraTax extends Module
         }
 
         $state = null;
-        if (!empty($address->id_state))
-        {
+        if (!empty($address->id_state)) {
             $state = new State((int)$address->id_state);
 
             if (!Validate::isLoadedObject($state)) {
@@ -822,15 +825,14 @@ class AvalaraTax extends Module
         }
 
 
-        if ((Tools::getIsset(Tools::getValue('updateproduct')) || Tools::getIsset(Tools::getValue('addproduct'))) && Tools::getIsset(Tools::getValue('id_product')) && (int)Tools::getValue('id_product'))
-        {
+        if ((Tools::getIsset(Tools::getValue('updateproduct')) || Tools::getIsset(Tools::getValue('addproduct'))) && Tools::getIsset(Tools::getValue('id_product')) && (int)Tools::getValue('id_product')) {
             $r = Db::getInstance()->getRow('
             SELECT `tax_code`
             FROM `'._DB_PREFIX_.'avalara_taxcodes` atc
             WHERE atc.`id_product` = '.(int)Tools::getValue('id_product'));
 
-            if (version_compare(_PS_VERSION_, '1.5', '<')) /* v1.4.x an older */
-            {
+            if (version_compare(_PS_VERSION_, '1.5', '<')) {
+                /* v1.4.x an older */
                 return '
                 <script type="text/javascript">
                     $(function() {
@@ -842,9 +844,8 @@ class AvalaraTax extends Module
                         $(\'span #id_tax_rules_group\').parent().html(\'Avalara\');
                     });
                 </script>';
-            }
-            elseif (version_compare(_PS_VERSION_, '1.6', '<')) /* v1.5.x */
-            {
+            } elseif (version_compare(_PS_VERSION_, '1.6', '<')) {
+                /* v1.5.x */
                 return '
                 <script type="text/javascript">
                     $(function() {
@@ -864,9 +865,8 @@ class AvalaraTax extends Module
                         });
                     });
                 </script>';
-            }
-            else /* v1.6.x and newer */
-            {
+            } else {
+                /* v1.6.x and newer */
                 return '
                 <script type="text/javascript">
                     $(function() {
@@ -890,19 +890,18 @@ class AvalaraTax extends Module
                     });
                 </script>';
             }
-        }
-        elseif ((Tools::isSubmit('updatecarrier') || Tools::isSubmit('addcarrier')) && Tools::getValue('id_carrier'))
+        } elseif ((Tools::isSubmit('updatecarrier') || Tools::isSubmit('addcarrier')) && Tools::getValue('id_carrier')) {
             return '<script type="text/javascript">
-            $(function() {
-                // override original tax rules
-                $(\'div #id_tax_rules_group\').parent().html(\'<label class="t">Avalara</label>\');
-            });
-        </script>';
+                $(function() {
+                    // override original tax rules
+                    $(\'div #id_tax_rules_group\').parent().html(\'<label class="t">Avalara</label>\');
+                });
+            </script>';
+        }
 
-        if (Tools::getValue('tab') == 'AdminTaxes' || Tools::getValue('tab') == 'AdminTaxRulesGroup' || Tools::strtolower(Tools::getValue('controller'))== 'admintaxes' || Tools::strtolower(Tools::getValue('controller')) == 'admintaxrulesgroup')
-        {
-            // JS for 1.6
-            if (version_compare(_PS_VERSION_, '1.6', '>')){
+        if (Tools::getValue('tab') == 'AdminTaxes' || Tools::getValue('tab') == 'AdminTaxRulesGroup' || Tools::strtolower(Tools::getValue('controller'))== 'admintaxes' || Tools::strtolower(Tools::getValue('controller')) == 'admintaxrulesgroup') {
+            if (version_compare(_PS_VERSION_, '1.6', '>')) {
+                // JS for 1.6
                 return '<script type="text/javascript">
                     $(function() {
                         $("#content #form-tax").hide();
@@ -910,29 +909,29 @@ class AvalaraTax extends Module
                         $("#desc-tax-new").hide();
                         $(\'#content div:first\').append(\'<div class="warn alert alert-danger">'.$this->l('Tax rules are overwritten by Avalara Tax Module. Please make sure "Enable Tax" and "Use Eco Tax" are set to "No"').'</div>\');
                     });
+                </script>';
+            } elseif (version_compare(_PS_VERSION_, '1.5', '>')) {
+                // JS for 1.5
+                return '<script type="text/javascript">
+                    $(function() {
+                        $(\'#desc-tax-new\').hide();
+                        $("#content form").not("#tax_form").hide();
+                        $("#content #form-tax_rules_group").hide();
+                        $(\'#content div:first\').append(\'<div class="warn alert alert-danger">'.$this->l('Tax rules are overwritten by Avalara Tax Module. Please make sure "Enable Tax" and "Use Eco Tax" are set to "No"').'</div>\');
+                    });
+                </script>';
+            } else {
+            // JS for 1.4
+                return '<script type="text/javascript">
+                    $(function() {
+                    if ($(\'#Taxes\').size() || $(\'#submitFiltertax_rules_group\').size())
+                        $(\'#content\').prepend(\'<div class="warn"><img src="../img/admin/warn2.png">'.
+                $this->l('Tax rules are overwritten by Avalara Tax Module.').'</div>\');
+                    });
                     </script>';
             }
-            // JS for 1.5
-            elseif (version_compare(_PS_VERSION_, '1.5', '>')){
-                return '<script type="text/javascript">
-                $(function() {
-                    $(\'#desc-tax-new\').hide();
-                    $("#content form").not("#tax_form").hide();
-                    $("#content #form-tax_rules_group").hide();
-                    $(\'#content div:first\').append(\'<div class="warn alert alert-danger">'.$this->l('Tax rules are overwritten by Avalara Tax Module. Please make sure "Enable Tax" and "Use Eco Tax" are set to "No"').'</div>\');
-                });
-                </script>';
-            }else{
-            // JS for 1.4
-            return '<script type="text/javascript">
-                $(function() {
-                if ($(\'#Taxes\').size() || $(\'#submitFiltertax_rules_group\').size())
-                    $(\'#content\').prepend(\'<div class="warn"><img src="../img/admin/warn2.png">'.
-            $this->l('Tax rules are overwritten by Avalara Tax Module.').'</div>\');
-                });
-                </script>';
-            }
         }
+
         return '';
     }
 
@@ -951,29 +950,26 @@ class AvalaraTax extends Module
     {
         $buffer = '';
 
-        if (version_compare(_PS_VERSION_,'1.5','>')) {
+        if (version_compare(_PS_VERSION_, '1.5', '>')) {
             $this->context->controller->addJQueryPlugin('fancybox');
         } else {
             $buffer .= '<script type="text/javascript" src="'.__PS_BASE_URI__.'js/jquery/jquery.fancybox-1.3.4.js"></script>
                 <link type="text/css" rel="stylesheet" href="'.__PS_BASE_URI__.'css/jquery.fancybox-1.3.4.css" />';
         }
 
-        if (Tools::isSubmit('SubmitAvalaraTaxSettings'))
-        {
+        if (Tools::isSubmit('SubmitAvalaraTaxSettings')) {
             Configuration::updateValue('AVALARATAX_ACCOUNT_NUMBER', Tools::getValue('avalaratax_account_number'));
             Configuration::updateValue('AVALARATAX_LICENSE_KEY', Tools::getValue('avalaratax_license_key'));
             Configuration::updateValue('AVALARATAX_URL', Tools::getValue('avalaratax_url'));
             Configuration::updateValue('AVALARATAX_COMPANY_CODE', Tools::getValue('avalaratax_company_code'));
 
             $connectionTestResult = $this->_testConnection();
-            if (strpos($connectionTestResult[0], 'Error') === false)
-            {
+
+            if (strpos($connectionTestResult[0], 'Error') === false) {
                 Configuration::updateValue('AVALARATAX_CONFIGURATION_OK', true);
                 $buffer .= $this->_displayConfirmation();
             }
-        }
-        elseif (Tools::isSubmit('SubmitAvalaraTaxOptions'))
-        {
+        } elseif (Tools::isSubmit('SubmitAvalaraTaxOptions')) {
             Configuration::updateValue('AVALARATAX_ADDRESS_VALIDATION', Tools::getValue('avalaratax_address_validation'));
             Configuration::updateValue('AVALARATAX_TAX_CALCULATION', Tools::getValue('avalaratax_tax_calculation'));
             Configuration::updateValue('AVALARATAX_TIMEOUT', (int)Tools::getValue('avalaratax_timeout'));
@@ -982,11 +978,9 @@ class AvalaraTax extends Module
             Configuration::updateValue('AVALARA_CACHE_MAX_LIMIT', (int)Tools::getValue('avalara_cache_max_limit'));
 
             $buffer .= $this->_displayConfirmation();
-        }
-        elseif (Tools::isSubmit('SubmitAvalaraTestConnection'))
+        } elseif (Tools::isSubmit('SubmitAvalaraTestConnection')) {
             $connectionTestResult = $this->_testConnection();
-        elseif (Tools::isSubmit('SubmitAvalaraAddressOptions'))
-        {
+        } elseif (Tools::isSubmit('SubmitAvalaraAddressOptions')) {
             /* Validate address*/
             $address = new Address();
             $address->address1 = Tools::getValue('avalaratax_address_line1');
@@ -997,8 +991,8 @@ class AvalaraTax extends Module
             $address->postcode = Tools::getValue('avalaratax_zip_code');
 
             $normalizedAddress = $this->validateAddress($address);
-            if (Tools::getIsset($normalizedAddress['ResultCode']) && $normalizedAddress['ResultCode'] == 'Success')
-            {
+
+            if (Tools::getIsset($normalizedAddress['ResultCode']) && $normalizedAddress['ResultCode'] == 'Success') {
                 $buffer .= $this->_displayConfirmation($this->l('The address you submitted has been validated.'));
                 Configuration::updateValue('AVALARATAX_ADDRESS_LINE1', $normalizedAddress['Normalized']['Line1']);
                 Configuration::updateValue('AVALARATAX_ADDRESS_LINE2', $normalizedAddress['Normalized']['Line2']);
@@ -1006,9 +1000,7 @@ class AvalaraTax extends Module
                 Configuration::updateValue('AVALARATAX_STATE', $normalizedAddress['Normalized']['Region']);
                 Configuration::updateValue('AVALARATAX_COUNTRY', $normalizedAddress['Normalized']['Country']);
                 Configuration::updateValue('AVALARATAX_ZIP_CODE', $normalizedAddress['Normalized']['PostalCode']);
-            }
-            else
-            {
+            } else {
                 $message = $this->l('The following error was generated while validating your address:');
 
                 if (Tools::getIsset($normalizedAddress['Exception']['FaultString'])) {
@@ -1029,9 +1021,7 @@ class AvalaraTax extends Module
                 Configuration::updateValue('AVALARATAX_STATE', Tools::getValue('avalaratax_state'));
                 Configuration::updateValue('AVALARATAX_ZIP_CODE', Tools::getValue('avalaratax_zip_code'));
             }
-        }
-        elseif (Tools::isSubmit('SubmitAvalaraTaxClearCache'))
-        {
+        } elseif (Tools::isSubmit('SubmitAvalaraTaxClearCache')) {
             Db::getInstance()->Execute('TRUNCATE TABLE `'._DB_PREFIX_.'avalara_product_cache`');
             Db::getInstance()->Execute('TRUNCATE TABLE `'._DB_PREFIX_.'avalara_carrier_cache`');
 
@@ -1170,11 +1160,11 @@ else
                     <legend><img src="'.$this->_path.'views/img/icon-config.gif" alt="" />'.$this->l('Configuration').'</legend>
                     <h4>'.$this->l('AvaTax Credentials').'</h4>';
 
-                    if (Tools::getIsset($connectionTestResult)) {
-                        $buffer .= '<div id="test_connection" style="background: '.Tools::safeOutput($connectionTestResult[1]).';">'.$connectionTestResult[0].'</div>';
-                    }
+        if (Tools::getIsset($connectionTestResult)) {
+            $buffer .= '<div id="test_connection" style="background: '.Tools::safeOutput($connectionTestResult[1]).';">'.$connectionTestResult[0].'</div>';
+        }
 
-                    $buffer .= '<label>'.$this->l('Account Number').'</label>
+        $buffer .= '<label>'.$this->l('Account Number').'</label>
                     <div class="margin-form">
                         <input type="text" name="avalaratax_account_number" value="'.(Tools::getIsset($confValues['AVALARATAX_ACCOUNT_NUMBER']) ? Tools::safeOutput($confValues['AVALARATAX_ACCOUNT_NUMBER']) : '').'" /> '.$this->l('Located in the top-right corner of your AvaTax Admin Console').'
                     </div>
@@ -1231,13 +1221,13 @@ else
                     <h4>'.$this->l('Default Post/Commit/Cancel/Refund Options').'</h4>
                     <span class="avalara-info">'.$this->l('When an order\'s status is updated, the following options will be used to update Avalara\'s records.').'</span>';
 
-            // Check if the order status exists
-            $orderStatusList = array();
-            foreach (Db::getInstance()->ExecuteS('SELECT `id_order_state`, `name` FROM `'._DB_PREFIX_.'order_state_lang` WHERE `id_lang` = '.(int)$this->context->cookie->id_lang) as $v) {
-                $orderStatusList[$v['id_order_state']] = Tools::safeOutput($v['name']);
-            }
+        // Check if the order status exists
+        $orderStatusList = array();
+        foreach (Db::getInstance()->ExecuteS('SELECT `id_order_state`, `name` FROM `'._DB_PREFIX_.'order_state_lang` WHERE `id_lang` = '.(int)$this->context->cookie->id_lang) as $v) {
+            $orderStatusList[$v['id_order_state']] = Tools::safeOutput($v['name']);
+        }
 
-            $buffer .= '<table class="avalara-table" cellspacing="0" cellpadding="0" width="100%">
+        $buffer .= '<table class="avalara-table" cellspacing="0" cellpadding="0" width="100%">
                         <th>'.$this->l('Action').'</th>
                         <th>'.$this->l('Order status in your store').'</th>
                         <tr>
@@ -1290,28 +1280,29 @@ else
                     <div class="margin-form">
                         <select name="avalaratax_country" id="avalaratax_country">';
 
-            foreach ($countryList as $country) {
-                $buffer .= '<option value="'.Tools::substr(Tools::strtoupper($country['iso_code']), 0, 2).'" '.($country['iso_code'] == $confValues['AVALARATAX_COUNTRY'] ? ' selected="selected"' : '').'>'.Tools::safeOutput($country['name']).'</option>';
-            }
+        foreach ($countryList as $country) {
+            $buffer .= '<option value="'.Tools::substr(Tools::strtoupper($country['iso_code']), 0, 2).'" '.($country['iso_code'] == $confValues['AVALARATAX_COUNTRY'] ? ' selected="selected"' : '').'>'.Tools::safeOutput($country['name']).'</option>';
+        }
 
-            $buffer .= '</select>
-                    </div>
-                    <label id="avalaratax_label_state" >'.$this->l('State').'</label>
-                    <div class="margin-form">
-                        <select name="avalaratax_state" id="avalaratax_state">';
-            foreach ($stateList as $state) {
-                $buffer .= '<option value="'.Tools::substr(Tools::strtoupper($state['iso_code']), 0, 2).'" '.($state['iso_code'] == $confValues['AVALARATAX_STATE'] ? ' selected="selected"' : '').'>'.Tools::safeOutput($state['name']).'</option>';
-            }
+        $buffer .= '</select>
+                </div>
+                <label id="avalaratax_label_state" >'.$this->l('State').'</label>
+                <div class="margin-form">
+                    <select name="avalaratax_state" id="avalaratax_state">';
 
-            $buffer .= '</select>
-                    </div>
-                    <div class="margin-form">
-                        <input type="submit" class="button" name="SubmitAvalaraAddressOptions" value="'.$this->l('Save Settings').'" />
-                    </div>
-                </fieldset>
-            </form>
-            <div class="clear"></div>
-        </div>';
+        foreach ($stateList as $state) {
+            $buffer .= '<option value="'.Tools::substr(Tools::strtoupper($state['iso_code']), 0, 2).'" '.($state['iso_code'] == $confValues['AVALARATAX_STATE'] ? ' selected="selected"' : '').'>'.Tools::safeOutput($state['name']).'</option>';
+        }
+
+        $buffer .= '</select>
+                </div>
+                <div class="margin-form">
+                    <input type="submit" class="button" name="SubmitAvalaraAddressOptions" value="'.$this->l('Save Settings').'" />
+                </div>
+            </fieldset>
+        </form>
+        <div class="clear"></div>
+    </div>';
 
         return $buffer;
     }
@@ -1354,12 +1345,16 @@ else
         include_once(dirname(__FILE__).'/sdk/AvaTax.php');
 
         /* Just instantiate the ATConfig class to init the settings (mandatory...) */
-        new ATConfig(Configuration::get('AVALARATAX_MODE'),
-            array('url' => Configuration::get('AVALARATAX_URL'),
-                        'account' => Configuration::get('AVALARATAX_ACCOUNT_NUMBER'),
-                        'license' => Configuration::get('AVALARATAX_LICENSE_KEY'),
-                        'client' => "Prestashop (" . _PS_VERSION_ . ") AvaTax Module (" . $this->version . ")",
-                        'trace' => false));
+        new ATConfig(
+            Configuration::get('AVALARATAX_MODE'),
+            array(
+                'url' => Configuration::get('AVALARATAX_URL'),
+                'account' => Configuration::get('AVALARATAX_ACCOUNT_NUMBER'),
+                'license' => Configuration::get('AVALARATAX_LICENSE_KEY'),
+                'client' => "Prestashop (" . _PS_VERSION_ . ") AvaTax Module (" . $this->version . ")",
+                'trace' => false
+            )
+        );
     }
 
     /**
@@ -1368,28 +1363,24 @@ else
     private function _testConnection()
     {
         $this->_connectToAvalara();
-        try
-        {
+        try {
             $client = new TaxServiceSoap(Configuration::get('AVALARATAX_MODE'));
             $connectionTest = $client->ping();
-            if ($connectionTest->getResultCode() == SeverityLevel::$Success)
-            {
-                try
-                {
+
+            if ($connectionTest->getResultCode() == SeverityLevel::$Success) {
+                try {
                     $authorizedTest = $client->isAuthorized('GetTax');
+
                     if ($authorizedTest->getResultCode() == SeverityLevel::$Success) {
                         $expirationDate = $authorizedTest->getexpires();
                     }
-                }
-                catch (SoapFault $exception)
-                {
+                } catch (SoapFault $exception) {
+                    // Intentionally blank
                 }
 
                 return array('<img src="../img/admin/ok.gif" alt="" /><strong style="color: green;">'.$this->l('Connection Test performed successfully.').'</strong><br /><br />'.$this->l('Ping version is:').' '.Tools::safeOutput($connectionTest->getVersion()).(Tools::getIsset($expirationDate) ? '<br /><br />'.$this->l('License Expiration Date:').' '.Tools::safeOutput($expirationDate) : ''), '#D6F5D6');
             }
-        }
-        catch (SoapFault $exception)
-        {
+        } catch (SoapFault $exception) {
             return array('<img src="../img/admin/forbbiden.gif" alt="" /><b style="color: #CC0000;">'.$this->l('Connection Test Failed.').'</b><br /><br />'.$this->l('Either the Account or License Key is incorrect. Please confirm the Account and License Key before testing the connection again.').'<br /><br /><strong style="color: #CC0000;">'.$this->l('Error(s):').' '.Tools::safeOutput($exception->faultstring).'</strong>', '#FFD8D8');
         }
     }
@@ -1410,26 +1401,31 @@ else
             $country = new Country((int)$address->id_country);
         }
 
-        $avalaraAddress = new AvalaraAddress($address->address1, $address->address2, null, $address->city,
-                                            (Tools::getIsset($state) ? $state->iso_code : null), $address->postcode, (Tools::getIsset($country) ? $country->iso_code : null), 0);
+        $avalaraAddress = new AvalaraAddress(
+            $address->address1,
+            $address->address2,
+            null,
+            $address->city,
+            (Tools::getIsset($state) ? $state->iso_code : null),
+            $address->postcode,
+            (Tools::getIsset($country) ? $country->iso_code : null),
+            0
+        );
 
         $buffer = array();
-        try
-        {
+        try {
             $request = new ValidateRequest($avalaraAddress, TextCase::$Upper, false);
             $result = $client->Validate($request);
             $addresses = $result->ValidAddresses;
 
             $buffer['ResultCode'] = Tools::safeOutput($result->getResultCode());
             if ($result->getResultCode() != SeverityLevel::$Success) {
-                foreach ($result->getMessages() as $msg)
-                {
+                foreach ($result->getMessages() as $msg) {
                     $buffer['Messages']['Name'][] = Tools::safeOutput($msg->getName());
                     $buffer['Messages']['Summary'][] = Tools::safeOutput($msg->getSummary());
                 }
             } else {
-                foreach ($result->getvalidAddresses() as $valid)
-                {
+                foreach ($result->getvalidAddresses() as $valid) {
                     $buffer['Normalized']['Line1'] = Tools::safeOutput($valid->getline1());
                     $buffer['Normalized']['Line2'] = Tools::safeOutput($valid->getline2());
                     $buffer['Normalized']['City']= Tools::safeOutput($valid->getcity());
@@ -1443,9 +1439,7 @@ else
                     $buffer['Normalized']['AddressType'] = Tools::safeOutput($valid->getaddressType());
                 }
             }
-        }
-        catch (SoapFault $exception)
-        {
+        } catch (SoapFault $exception) {
             $buffer['Exception']['FaultString'] = Tools::safeOutput($exception->faultstring);
             $buffer['Exception']['LastRequest'] = Tools::safeOutput($client->__getLastRequest());
             $buffer['Exception']['LastResponse'] = Tools::safeOutput($client->__getLastResponse());
@@ -1483,8 +1477,7 @@ else
             $address = new Address((int)Db::getInstance()->getValue('SELECT `id_address` FROM `'._DB_PREFIX_.'address`  WHERE `id_customer` = '.(int)$this->context->cookie->id_customer.' AND active = 1 AND deleted = 0'));
         }
 
-        if (Tools::getIsset($address))
-        {
+        if (Tools::getIsset($address)) {
             if (!empty($address->id_state)) {
                 $state = new State((int)$address->id_state);
             }
@@ -1498,11 +1491,10 @@ else
             $addressDest['Country'] = Country::getIsoById($address->id_country);
 
             // Try to normalize the address depending on option in the BO
-            if (Configuration::get('AVALARATAX_ADDRESS_NORMALIZATION'))
-            {
+            if (Configuration::get('AVALARATAX_ADDRESS_NORMALIZATION')) {
                 $last_update = Db::getInstance()->getValue('SELECT date_add FROM '._DB_PREFIX_.'avalara_address_validation_cache WHERE id_address = '.(int)$address->id);
-                if (empty($last_update) || (strtotime($address->date_upd) > strtotime($last_update)))
-                {
+
+                if (empty($last_update) || (strtotime($address->date_upd) > strtotime($last_update))) {
                     $normalizedAddress = $this->validateAddress($address);
                     Db::getInstance()->Execute('INSERT INTO '._DB_PREFIX_.'avalara_address_validation_cache (id_address, date_add) VALUES ('.(int)$address->id.', \''.pSQL(date('Y-m-d H:i:s')).'\') ON DUPLICATE KEY UPDATE date_add = \''.pSQL(date('Y-m-d H:i:s')).'\'');
                 }
@@ -1589,8 +1581,7 @@ else
         $free_shipping = false; // Used below to determine values to send to Avalara for shipping
         $shipping_total = (float)0.00;
 
-        if (Tools::getIsset($params['cart']))
-        {
+        if (Tools::getIsset($params['cart'])) {
             $discount_total = $params['cart']->getOrderTotal(false, Cart::ONLY_DISCOUNTS); // decimal
             $shipping_total = (float)$params['cart']->getOrderTotal(false, Cart::ONLY_SHIPPING);
 
@@ -1606,15 +1597,13 @@ else
 
             // If free shipping provided, remove the free shipping amount from the discount total
             // and set $shipping_total variable to zero
-            if ($free_shipping){
+            if ($free_shipping) {
                 $discount_total -= $shipping_total;
                 $shipping_total = (float)0.00;
             }
 
             $request->setDiscount($discount_total);
-        }
-        else
-        {
+        } else {
             $request->setDiscount(0.00); // decimal
         }
 
@@ -1623,8 +1612,7 @@ else
         // Add line
         $lines = array();
         $i = 0;
-        foreach ($products as $product)
-        {
+        foreach ($products as $product) {
             // Retrieve the tax_code for the current product if not defined
             if (Tools::getIsset($params['taxable']) && !$params['taxable']) {
                 $taxCode = 'NT';
@@ -1632,8 +1620,7 @@ else
                 $taxCode = !Tools::getIsset($product['tax_code']) ? $this->getProductTaxCode((int)$product['id_product']) : $product['tax_code'];
             }
 
-            if (Tools::getIsset($product['id_product']))
-            {
+            if (Tools::getIsset($product['id_product'])) {
                 $line = new Line();
                 $line->setNo($i++);     // string line Number of invoice ($i)
                 $line->setItemCode((int)$product['id_product'].' - '.Tools::substr($product['name'], 0, 20));
@@ -1648,8 +1635,7 @@ else
         }
 
         // Send shipping as new line
-        if (Tools::getIsset($params['cart']))
-        {
+        if (Tools::getIsset($params['cart'])) {
             $line = new Line();
             $line->setNo('Shipping'); // Shipping information has it's own special line number in AvaTax
             $line->setItemCode('Shipping');
@@ -1663,8 +1649,7 @@ else
 
         $request->setLines($lines);
         $buffer = array();
-        try
-        {
+        try {
             $result = $client->getTax($request);
             $buffer['ResultCode'] = Tools::safeOutput($result->getResultCode());
             if ($result->getResultCode() == SeverityLevel::$Success) {
@@ -1676,13 +1661,12 @@ else
                 $buffer['TotalTax'] = Tools::safeOutput($result->getTotalTax());
                 $buffer['TotalTaxCalculated'] = Tools::safeOutput($result->getTotalTaxCalculated());
                 $buffer['NowTime'] = $nowTime;
-                foreach ($result->getTaxLines() as $ctl)
-                {
+
+                foreach ($result->getTaxLines() as $ctl) {
                     $buffer['TaxLines'][$ctl->getNo()]['GetTax'] = Tools::safeOutput($ctl->getTax());
                     $buffer['TaxLines'][$ctl->getNo()]['TaxCode'] = Tools::safeOutput($ctl->getTaxCode());
 
-                    foreach ($ctl->getTaxDetails() as $ctd)
-                    {
+                    foreach ($ctl->getTaxDetails() as $ctd) {
                         $buffer['TaxLines'][$ctl->getNo()]['TaxDetails']['JurisType'] = Tools::safeOutput($ctd->getJurisType());
                         $buffer['TaxLines'][$ctl->getNo()]['TaxDetails']['JurisName'] = Tools::safeOutput($ctd->getJurisName());
                         $buffer['TaxLines'][$ctl->getNo()]['TaxDetails']['Region'] = Tools::safeOutput($ctd->getRegion());
@@ -1691,15 +1675,12 @@ else
                     }
                 }
             } else {
-                foreach ($result->getMessages() as $msg)
-                {
+                foreach ($result->getMessages() as $msg) {
                     $buffer['Messages']['Name'] = Tools::safeOutput($msg->getName());
                     $buffer['Messages']['Summary'] = Tools::safeOutput($msg->getSummary());
                 }
             }
-        }
-        catch (SoapFault $exception)
-        {
+        } catch (SoapFault $exception) {
             $buffer['Exception']['FaultString'] = Tools::safeOutput($exception->faultstring);
             $buffer['Exception']['LastRequest'] = Tools::safeOutput($client->__getLastRequest());
             $buffer['Exception']['LastResponse'] = Tools::safeOutput($client->__getLastResponse());
@@ -1743,23 +1724,19 @@ else
             }
 
             $request->setCancelCode($code);
-        }
-        elseif ($type == 'history')
-        {
+        } elseif ($type == 'history') {
             $request= new GetTaxHistoryRequest();
             $request->setDetailLevel(DetailLevel::$Document);
         }
 
-        if ($type != 'isAuthorized')
-        {
+        if ($type != 'isAuthorized') {
             $request->setDocCode('Order '.(int)$params['DocCode']);
             $request->setDocType(DocumentType::$SalesInvoice);
             $request->setCompanyCode(Configuration::get('AVALARATAX_COMPANY_CODE'));
         }
 
         $buffer = array();
-        try
-        {
+        try {
             if ($type == 'commit') {
                 $result = $client->commitTax($request);
             } elseif ($type == 'post') {
@@ -1782,9 +1759,7 @@ else
                     $buffer['Messages']['Summary'] = Tools::safeOutput($msg->getSummary());
                 }
             }
-        }
-        catch (SoapFault $exception)
-        {
+        } catch (SoapFault $exception) {
             $buffer['Exception']['FaultString'] = Tools::safeOutput($exception->faultstring);
             $buffer['Exception']['LastRequest'] = Tools::safeOutput($client->__getLastRequest());
             $buffer['Exception']['LastResponse'] = Tools::safeOutput($client->__getLastResponse());
@@ -1806,8 +1781,8 @@ else
         $destination->setPostalCode($params['address']->postcode);
 
         $commitResult = $this->tax('history', array('DocCode' => (int)$params['id_order'], 'Destination' => $destination));
-        if (Tools::getIsset($commitResult['ResultCode']) && $commitResult['ResultCode'] == 'Success')
-        {
+
+        if (Tools::getIsset($commitResult['ResultCode']) && $commitResult['ResultCode'] == 'Success') {
             $params['CancelCode'] = 'D';
             $this->cancelFromAvalara($params);
             $this->cancelFromAvalara($params); // Twice because first call only voids the order, and 2nd call deletes it
@@ -1850,8 +1825,13 @@ else
 
 
         if (Tools::getIsset($commitResult['ResultCode']) && ($commitResult['ResultCode'] == 'Warning' || $commitResult['ResultCode'] == 'Error' || $commitResult['ResultCode'] == 'Exception')) {
-            return $this->_displayConfirmation($this->l('The following error was generated while cancelling the orders you selected.'.
-                    '<br /> - '.Tools::safeOutput($commitResult['Messages']['Summary'])), 'error');
+            return $this->_displayConfirmation(
+                $this->l(
+                    'The following error was generated while cancelling the orders you selected.'.
+                    '<br /> - '.Tools::safeOutput($commitResult['Messages']['Summary'])
+                ),
+                'error'
+            );
         }
 
         return $this->_displayConfirmation($this->l('The orders you selected were posted.'));
@@ -1862,13 +1842,16 @@ else
         // Create the order before commiting to Avalara
         $this->postToAvalara($params);
         $commitResult = $this->tax('history', array('DocCode' => $params['id_order']));
-        if (Tools::getIsset($commitResult['ResultCode']) && $commitResult['ResultCode'] == 'Success')
-        {
+        if (Tools::getIsset($commitResult['ResultCode']) && $commitResult['ResultCode'] == 'Success') {
             $commitResult = $this->tax('commit', array('DocCode' => (int)$params['id_order']));
+
             if (Tools::getIsset($commitResult['Exception']) || Tools::getIsset($commitResult['ResultCode']) && ($commitResult['ResultCode'] == 'Warning' || $commitResult['ResultCode'] == 'Error' || $commitResult['ResultCode'] == 'Exception')) {
-                return ($this->_displayConfirmation($this->l('The following error was generated while committing the orders you selected to Avalara.').
-                        (Tools::getIsset($commitResult['Messages']) ? '<br /> - '.Tools::safeOutput($commitResult['Messages']['Summary']) : '').
-                        (Tools::getIsset($commitResult['Exception']) ? '<br /> - '.Tools::safeOutput($commitResult['Exception']['FaultString']) : ''), 'error'));
+                return ($this->_displayConfirmation(
+                    $this->l('The following error was generated while committing the orders you selected to Avalara.').
+                    (Tools::getIsset($commitResult['Messages']) ? '<br /> - '.Tools::safeOutput($commitResult['Messages']['Summary']) : '').
+                    (Tools::getIsset($commitResult['Exception']) ? '<br /> - '.Tools::safeOutput($commitResult['Exception']['FaultString']) : ''),
+                    'error'
+                ));
             } else {
                 return $this->_displayConfirmation($this->l('The orders you selected were committed.'));
             }
@@ -1885,8 +1868,7 @@ else
                                                 WHERE `id_order` = '.(int)$params['id_order'].'
                                                 AND (`product_quantity_refunded` IS NOT NULL AND `product_quantity_refunded` > 0)');
 
-        if (!($commitResult['Status'] == 'Committed' && (int)$hasRefund[0]['qtyProductRefunded'] > 0))
-        {
+        if (!($commitResult['Status'] == 'Committed' && (int)$hasRefund[0]['qtyProductRefunded'] > 0)) {
             if (Tools::getIsset($commitResult['Status']) && $commitResult['Status'] == 'Temporary') {
                 $this->postToAvalara($params);
             }
@@ -1897,8 +1879,11 @@ else
             && ( $commitResult['ResultCode'] == 'Warning'
             || $commitResult['ResultCode'] == 'Error'
             || $commitResult['ResultCode'] == 'Exception')) {
-                return $this->_displayConfirmation($this->l('The following error was generated while cancelling the orders you selected.').
-                    ' <br /> - '.Tools::safeOutput($commitResult['Messages']['Summary']), 'error');
+                return $this->_displayConfirmation(
+                    $this->l('The following error was generated while cancelling the orders you selected.').
+                    ' <br /> - '.Tools::safeOutput($commitResult['Messages']['Summary']),
+                    'error'
+                );
             } else {
                 return $this->_displayConfirmation($this->l('The orders you selected were cancelled.'));
             }
@@ -1913,8 +1898,7 @@ else
         $address = new Address(Tools::getIsset(Tools::getValue('id_address')) ? (int)Tools::getValue('id_address') : null);
 
         /* Validate address only in the U.S. and Canada - if the Address Validation feature has been turned on in the module's configuration */
-        if (($address->id_country == Country::getByIso('US') || $address->id_country == Country::getByIso('CA')) && $this->tax('isAuthorized') && Configuration::get('AVALARATAX_ADDRESS_VALIDATION'))
-        {
+        if (($address->id_country == Country::getByIso('US') || $address->id_country == Country::getByIso('CA')) && $this->tax('isAuthorized') && Configuration::get('AVALARATAX_ADDRESS_VALIDATION')) {
             $address->address1 = Tools::getIsset(Tools::getValue('address1')) ? Tools::getValue('address1') : null;
             $address->address2 = Tools::getIsset(Tools::getValue('address2')) ? Tools::getValue('address2') : null;
             $address->city = Tools::getIsset(Tools::getValue('city')) ? Tools::getValue('city') : null;
@@ -1924,8 +1908,7 @@ else
             $address->id_state = Tools::getIsset(Tools::getValue('id_state')) ? (int)Tools::getValue('id_state') : null;
 
             $normalizedAddress = $this->validateAddress($address);
-            if (Tools::getIsset($normalizedAddress['ResultCode']) && $normalizedAddress['ResultCode'] == 'Success')
-            {
+            if (Tools::getIsset($normalizedAddress['ResultCode']) && $normalizedAddress['ResultCode'] == 'Success') {
                 Db::getInstance()->Execute('INSERT INTO '._DB_PREFIX_.'avalara_address_validation_cache (id_address, date_add) VALUES ('.(int)$address->id.', \''.pSQL(date('Y-m-d H:i:s')).'\') ON DUPLICATE KEY UPDATE date_add = \''.pSQL(date('Y-m-d H:i:s')).'\'');
 
                 $_POST['address1'] = Tools::safeOutput($normalizedAddress['Normalized']['Line1']);
@@ -1933,6 +1916,7 @@ else
                 $_POST['city'] = Tools::safeOutput($normalizedAddress['Normalized']['City']);
                 $_POST['postcode'] =  Tools::safeOutput(Tools::substr($normalizedAddress['Normalized']['PostalCode'], 0, strpos($normalizedAddress['Normalized']['PostalCode'], '-')));
             }
+
             return $normalizedAddress;
         }
     }
