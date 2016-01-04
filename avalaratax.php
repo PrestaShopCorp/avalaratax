@@ -25,8 +25,9 @@
 */
 
 // Security
-if (!defined('_PS_VERSION_'))
+if (!defined('_PS_VERSION_')) {
     exit;
+}
 
 spl_autoload_register('avalaraAutoload');
 
@@ -51,8 +52,9 @@ class AvalaraTax extends Module
         /** Backward compatibility */
         require(_PS_MODULE_DIR_.$this->name.'/backward_compatibility/backward.php');
 
-        if (!extension_loaded('soap') || !class_exists('SoapClient'))
+        if (!extension_loaded('soap') || !class_exists('SoapClient')) {
             $this->warning = $this->l('SOAP extension should be enabled on your server to use this module.');
+        }
     }
 
     /**
@@ -154,57 +156,63 @@ class AvalaraTax extends Module
         `total_shipping_tax` float(8,2) unsigned NOT NULL,
         PRIMARY KEY (`cart_hash`),
         KEY `cart_hash` (`cart_hash`),
-        KEY `cart_id` (`cart_id`))'))
+        KEY `cart_id` (`cart_id`))')) {
             return false;
+        }
 
-        if (!parent::install() ||
-            !$this->registerHook('updateOrderStatus') ||
-            !$this->registerHook('cancelProduct') ||                        // Old PS 1.4 hook
-            !$this->registerHook('actionProductCancel') ||                  // New PS 1.5 > hook
-            !$this->registerHook('adminOrder') ||
-            !$this->registerHook('backOfficeTop') ||
-            !$this->registerHook('header') ||
-            !$this->registerHook('actionCartSave') ||
-            !$this->registerHook('actionOrderDetail') ||
-            !$this->registerHook('actionCartGetOrderTotal') ||
-            !$this->registerHook('actionCartGetPackageShippingCost') ||
-            !$this->overrideFiles())
-            return false;
+        if (!parent::install()
+            || !$this->registerHook('updateOrderStatus')
+            || !$this->registerHook('cancelProduct')                       // Old PS 1.4 hook
+            || !$this->registerHook('actionProductCancel')                 // New PS 1.5 > hook
+            || !$this->registerHook('adminOrder')
+            || !$this->registerHook('backOfficeTop')
+            || !$this->registerHook('header')
+            || !$this->registerHook('actionCartSave')
+            || !$this->registerHook('actionOrderDetail')
+            || !$this->registerHook('actionCartGetOrderTotal')
+            || !$this->registerHook('actionCartGetPackageShippingCost')
+            || !$this->overrideFiles()) {
+                return false;
+        }
+
         return true;
     }
 
     public function uninstall()
     {
-        if (!$this->removeOverrideFiles() || !parent::uninstall() ||
-            !Configuration::deleteByName('AVALARATAX_URL') ||
-            !Configuration::deleteByName('AVALARATAX_ADDRESS_VALIDATION') ||
-            !Configuration::deleteByName('AVALARATAX_TAX_CALCULATION') ||
-            !Configuration::deleteByName('AVALARATAX_TIMEOUT') ||
-            !Configuration::deleteByName('AVALARATAX_MODE') ||
-            !Configuration::deleteByName('AVALARATAX_ACCOUNT_NUMBER') ||
-            !Configuration::deleteByName('AVALARATAX_COMPANY_CODE') ||
-            !Configuration::deleteByName('AVALARATAX_LICENSE_KEY') ||
-            !Configuration::deleteByName('AVALARATAX_ADDRESS_NORMALIZATION') ||
-            !Configuration::deleteByName('AVALARATAX_ADDRESS_LINE1') ||
-            !Configuration::deleteByName('AVALARATAX_ADDRESS_LINE2') ||
-            !Configuration::deleteByName('AVALARATAX_CITY') ||
-            !Configuration::deleteByName('AVALARATAX_STATE') ||
-            !Configuration::deleteByName('AVALARATAX_ZIP_CODE') ||
-            !Configuration::deleteByName('AVALARATAX_COUNTRY') ||
-            !Configuration::deleteByName('AVALARATAX_COMMIT_ID') ||
-            !Configuration::deleteByName('AVALARATAX_CANCEL_ID') ||
-            !Configuration::deleteByName('AVALARATAX_REFUND_ID') ||
-            !Configuration::deleteByName('AVALARA_CACHE_MAX_LIMIT') ||
-            !Configuration::deleteByName('AVALARATAX_POST_ID') ||
-            !Configuration::deleteByName('AVALARATAX_CONFIGURATION_OK') ||
-            !Db::getInstance()->Execute('DROP TABLE `'._DB_PREFIX_.'avalara_product_cache`') ||
-            !Db::getInstance()->Execute('DROP TABLE `'._DB_PREFIX_.'avalara_carrier_cache`') ||
-            !Db::getInstance()->Execute('DROP TABLE `'._DB_PREFIX_.'avalara_address_validation_cache`') ||
-            !Db::getInstance()->Execute('DROP TABLE `'._DB_PREFIX_.'avalara_returned_products`') ||
-            !Db::getInstance()->Execute('DROP TABLE `'._DB_PREFIX_.'avalara_temp`') ||
-            !Db::getInstance()->Execute('DROP TABLE IF EXISTS `'._DB_PREFIX_.'avalara_cart_cache`'))
-            return false;
-        // Do not remove taxcode table
+        if (!$this->removeOverrideFiles()
+            || !parent::uninstall()
+            || !Configuration::deleteByName('AVALARATAX_URL')
+            || !Configuration::deleteByName('AVALARATAX_ADDRESS_VALIDATION')
+            || !Configuration::deleteByName('AVALARATAX_TAX_CALCULATION')
+            || !Configuration::deleteByName('AVALARATAX_TIMEOUT')
+            || !Configuration::deleteByName('AVALARATAX_MODE')
+            || !Configuration::deleteByName('AVALARATAX_ACCOUNT_NUMBER')
+            || !Configuration::deleteByName('AVALARATAX_COMPANY_CODE')
+            || !Configuration::deleteByName('AVALARATAX_LICENSE_KEY')
+            || !Configuration::deleteByName('AVALARATAX_ADDRESS_NORMALIZATION')
+            || !Configuration::deleteByName('AVALARATAX_ADDRESS_LINE1')
+            || !Configuration::deleteByName('AVALARATAX_ADDRESS_LINE2')
+            || !Configuration::deleteByName('AVALARATAX_CITY')
+            || !Configuration::deleteByName('AVALARATAX_STATE')
+            || !Configuration::deleteByName('AVALARATAX_ZIP_CODE')
+            || !Configuration::deleteByName('AVALARATAX_COUNTRY')
+            || !Configuration::deleteByName('AVALARATAX_COMMIT_ID')
+            || !Configuration::deleteByName('AVALARATAX_CANCEL_ID')
+            || !Configuration::deleteByName('AVALARATAX_REFUND_ID')
+            || !Configuration::deleteByName('AVALARA_CACHE_MAX_LIMIT')
+            || !Configuration::deleteByName('AVALARATAX_POST_ID')
+            || !Configuration::deleteByName('AVALARATAX_CONFIGURATION_OK')
+            || !Db::getInstance()->Execute('DROP TABLE `'._DB_PREFIX_.'avalara_product_cache`')
+            || !Db::getInstance()->Execute('DROP TABLE `'._DB_PREFIX_.'avalara_carrier_cache`')
+            || !Db::getInstance()->Execute('DROP TABLE `'._DB_PREFIX_.'avalara_address_validation_cache`')
+            || !Db::getInstance()->Execute('DROP TABLE `'._DB_PREFIX_.'avalara_returned_products`')
+            || !Db::getInstance()->Execute('DROP TABLE `'._DB_PREFIX_.'avalara_temp`')
+            || !Db::getInstance()->Execute('DROP TABLE IF EXISTS `'._DB_PREFIX_.'avalara_cart_cache`')) {
+                // Remember, we intentionally did not remove taxcode table
+                return false;
+        }
+
         return true;
     }
 
@@ -245,24 +253,32 @@ class AvalaraTax extends Module
     protected function removeOverrideFiles()
     {
         /** In v1.5, we do not remove override files */
-        if (version_compare(_PS_VERSION_, '1.5', '<'))
+        if (version_compare(_PS_VERSION_, '1.5', '<')) {
             foreach (self::getOverrideInfo() as $key => $params)
             {
-                if (!file_exists(_PS_ROOT_DIR_.'/'.$params['dest']))
+                if (!file_exists(_PS_ROOT_DIR_.'/'.$params['dest'])) {
                     continue;
+                }
 
                 $md5 = md5_file(_PS_ROOT_DIR_.'/'.$params['dest']);
                 $removed = false;
-                foreach ($params['md5'] as $hash)
+
+                foreach ($params['md5'] as $hash) {
                     if ($md5 == $hash)
                     {
-                        if (unlink(_PS_ROOT_DIR_.'/'.$params['dest']))
+                        if (unlink(_PS_ROOT_DIR_.'/'.$params['dest'])) {
                             $removed = true;
+                        }
+
                         break;
                     }
-                if (!$removed)
+                }
+
+                if (!$removed) {
                     $this->_errors[] = $this->l('Error while removing override: ').$key;
+                }
             }
+        }
 
         return !Tools::getIsset($this->_errors) || !$this->_errors || !count($this->_errors);
     }
@@ -273,16 +289,21 @@ class AvalaraTax extends Module
         if (version_compare(_PS_VERSION_, '1.5', '<') && $this->removeOverrideFiles())
         {
             /** Check if the override directories exists */
-            if (!is_dir(_PS_ROOT_DIR_.'/override/classes/'))
+            if (!is_dir(_PS_ROOT_DIR_.'/override/classes/')) {
                 mkdir(_PS_ROOT_DIR_.'/override/classes/', 0777, true);
-            if (!is_dir(_PS_ROOT_DIR_.'/override/controllers/'))
-                mkdir(_PS_ROOT_DIR_.'/override/controllers/', 0777, true);
+            }
 
-            foreach (self::getOverrideInfo() as $key => $params)
-                if (file_exists(_PS_ROOT_DIR_.'/'.$params['dest']))
+            if (!is_dir(_PS_ROOT_DIR_.'/override/controllers/')) {
+                mkdir(_PS_ROOT_DIR_.'/override/controllers/', 0777, true);
+            }
+
+            foreach (self::getOverrideInfo() as $key => $params) {
+                if (file_exists(_PS_ROOT_DIR_.'/'.$params['dest'])) {
                     $this->_errors[] = $this->l('This override file already exists, please merge it manually: ').$key;
-                elseif (!copy(_PS_MODULE_DIR_.'avalaratax/'.$params['source'], _PS_ROOT_DIR_.'/'.$params['dest']))
-                        $this->_erroors[] = $this->l('Error while copying the override file: ').$key;
+                } elseif (!copy(_PS_MODULE_DIR_.'avalaratax/'.$params['source'], _PS_ROOT_DIR_.'/'.$params['dest'])) {
+                    $this->_erroors[] = $this->l('Error while copying the override file: ').$key;
+                }
+            }
         }
         return !Tools::getIsset($this->_errors) || !$this->_errors || !count($this->_errors);
     }
@@ -316,15 +337,22 @@ class AvalaraTax extends Module
         if (Tools::getIsset(Tools::getValue('cancelProduct')))
         {
             $order = new Order((int)Tools::getValue('id_order'));
-            if (!Validate::isLoadedObject($order))
+
+            if (!Validate::isLoadedObject($order)) {
                 return false;
+            }
+
             if ($order->invoice_number)
             {
                 // Get all the cancel product's IDs
                 $cancelledIdsOrderDetail = array();
-                foreach (Tools::getValue('cancelQuantity') as $idOrderDetail => $qty)
-                    if ($qty > 0)
+
+                foreach (Tools::getValue('cancelQuantity') as $idOrderDetail => $qty) {
+                    if ($qty > 0) {
                         $cancelledIdsOrderDetail[] = (int)$idOrderDetail;
+                    }
+                }
+
                 $cancelledIdsOrderDetail = implode(', ', $cancelledIdsOrderDetail);
 
                 // Fill temp table
@@ -336,8 +364,9 @@ class AvalaraTax extends Module
                                                         WHERE `id_order_detail` IN ('.pSQL($cancelledIdsOrderDetail).')');
 
                 // We haven't reached the end of the returned products loop, exit this call of the hook early
-                if ($totalLoop[0]['totalLines'] != count(array_filter(Tools::getValue('cancelQuantity'))))
+                if ($totalLoop[0]['totalLines'] != count(array_filter(Tools::getValue('cancelQuantity')))) {
                     return false;
+                }
 
                 // We should have reached the last call of this hook (all returned products are in our temp table)
                 // Clean the temp table because we are at the end of the loop
@@ -355,21 +384,22 @@ class AvalaraTax extends Module
                                                                         AND od.`id_order_detail` IN ('.pSQL($cancelledIdsOrderDetail).')');
                 // Build the product list
                 $products = array();
-                foreach ($cancelledProdIdsDetails as $cancelProd)
+                foreach ($cancelledProdIdsDetails as $cancelProd) {
                     $products[] = array('id_product' => (int)$cancelProd['id_product'],
-                                                'quantity' => (int)Tools::getValue('cancelQuantity')[$cancelProd['id_order_detail']],
-                                                'total' => pSQL(Tools::getValue('cancelQuantity')[$cancelProd['id_order_detail']] * ($cancelProd['price'] - ($cancelProd['price'] * ($cancelProd['reduction_percent'] / 100)) - $cancelProd['reduction_amount'])), // Including those product with discounts
-                                                'name' => pSQL(Tools::safeOutput($cancelProd['name'])),
-                                                'description_short' => pSQL(Tools::safeOutput($cancelProd['description_short']), true),
-                                                'tax_code' => pSQL(Tools::safeOutput($cancelProd['tax_code'])));
+                                        'quantity' => (int)Tools::getValue('cancelQuantity')[$cancelProd['id_order_detail']],
+                                        'total' => pSQL(Tools::getValue('cancelQuantity')[$cancelProd['id_order_detail']] * ($cancelProd['price'] - ($cancelProd['price'] * ($cancelProd['reduction_percent'] / 100)) - $cancelProd['reduction_amount'])), // Including those product with discounts
+                                        'name' => pSQL(Tools::safeOutput($cancelProd['name'])),
+                                        'description_short' => pSQL(Tools::safeOutput($cancelProd['description_short']), true),
+                                        'tax_code' => pSQL(Tools::safeOutput($cancelProd['tax_code'])));
+                }
+
                 // Send to Avalara
                 $commitResult = $this->getTax($products, array('type' => 'ReturnInvoice', 'DocCode' => (int)Tools::getValue('id_order')));
 
-                if ($commitResult['ResultCode'] == 'Warning' || $commitResult['ResultCode'] == 'Error' || $commitResult['ResultCode'] == 'Exception')
+                if ($commitResult['ResultCode'] == 'Warning' || $commitResult['ResultCode'] == 'Error' || $commitResult['ResultCode'] == 'Exception') {
                     echo $this->_displayConfirmation($this->l('The following error was generated while cancelling the orders you selected. <br /> - '.
                             Tools::safeOutput($commitResult['Messages']['Summary'])), 'error');
-                else
-                {
+                } else {
                     // This seems to be causing returns to improperly adjust the commit date of the orignal transaction
                     // $this->commitToAvalara(array('id_order' => (int)Tools::getValue('id_order')));
 
@@ -515,8 +545,9 @@ class AvalaraTax extends Module
             // Search avalara_cart_cache table for tax values by cart hash primary key
             $tax_array = $this->getTaxesForCartHash($cart_hash);
 
-            if (is_array($tax_array))
+            if (is_array($tax_array)) {
                 $total_shipping_tax = $tax_array['total_shipping_tax'];
+            }
         }
 
         if ($with_taxes==false) {
@@ -532,22 +563,26 @@ class AvalaraTax extends Module
     public function hookActionCartSave($args)
     {
         $cart = $args['cart'];
-        if(!is_object($cart))
+
+        if (!is_object($cart)) {
             return false;
+        }
 
         $products = $cart->getProducts();
 
         // No point in continuing if we do not have products in the cart
-        if (empty($products))
+        if (empty($products)) {
             return false;
+        }
 
         // Obtain a simplified cart array and construct a hash to act as the primary key for the avalara_cart_cache table
         $s_cart = $this->getSimplifiedCart($cart);
         $cart_hash = md5(serialize($s_cart));
 
         // Verify that we have all the required information to uniquely identify a cart
-        if (empty($s_cart['cart_id']) || empty($s_cart['customer_id']) || empty('customer_tax_address_id') || empty('carrier'))
+        if (empty($s_cart['cart_id']) || empty($s_cart['customer_id']) || empty('customer_tax_address_id') || empty('carrier')) {
             return false; // Skip everything below because we are missing a cart id, a customer id or a tax_address_id
+        }
 
         $s_products = $s_cart['products'];
 
@@ -666,15 +701,22 @@ class AvalaraTax extends Module
         if (Tools::getIsset(Tools::getValue('cancelProduct')))
         {
             $order = new Order((int)Tools::getValue('id_order'));
-            if (!Validate::isLoadedObject($order))
+
+            if (!Validate::isLoadedObject($order)) {
                 return false;
+            }
+
             if ($order->invoice_number)
             {
                 // Get all the cancel product's IDs
                 $cancelledIdsOrderDetail = array();
-                foreach (Tools::getValue('cancelQuantity') as $idOrderDetail => $qty)
-                    if ($qty > 0)
+
+                foreach (Tools::getValue('cancelQuantity') as $idOrderDetail => $qty) {
+                    if ($qty > 0) {
                         $cancelledIdsOrderDetail[] = (int)$idOrderDetail;
+                    }
+                }
+
                 $cancelledIdsOrderDetail = implode(', ', $cancelledIdsOrderDetail);
 
                 // Fill temp table
@@ -685,8 +727,9 @@ class AvalaraTax extends Module
                                                         FROM `'._DB_PREFIX_.'avalara_temp`
                                                         WHERE `id_order_detail` IN ('.pSQL($cancelledIdsOrderDetail).')');
 
-                if ($totalLoop[0]['totalLines'] != count(array_filter(Tools::getValue('cancelQuantity'))))
+                if ($totalLoop[0]['totalLines'] != count(array_filter(Tools::getValue('cancelQuantity')))) {
                     return false;
+                }
 
                 // Clean the temp table because we are at the end of the loop
                 $this->purgeTempTable();
@@ -703,20 +746,21 @@ class AvalaraTax extends Module
                                                                         AND od.`id_order_detail` IN ('.pSQL($cancelledIdsOrderDetail).')');
                 // Build the product list
                 $products = array();
-                foreach ($cancelledProdIdsDetails as $cancelProd)
+                foreach ($cancelledProdIdsDetails as $cancelProd) {
                     $products[] = array('id_product' => (int)$cancelProd['id_product'],
-                                                'quantity' => (int)Tools::getValue('cancelQuantity')[$cancelProd['id_order_detail']],
-                                                'total' => pSQL(Tools::getValue('cancelQuantity')[$cancelProd['id_order_detail']] * ($cancelProd['price'] - ($cancelProd['price'] * ($cancelProd['reduction_percent'] / 100)) - $cancelProd['reduction_amount'])), // Including those product with discounts
-                                                'name' => pSQL(Tools::safeOutput($cancelProd['name'])),
-                                                'description_short' => pSQL(Tools::safeOutput($cancelProd['description_short']), true),
-                                                'tax_code' => pSQL(Tools::safeOutput($cancelProd['tax_code'])));
+                                        'quantity' => (int)Tools::getValue('cancelQuantity')[$cancelProd['id_order_detail']],
+                                        'total' => pSQL(Tools::getValue('cancelQuantity')[$cancelProd['id_order_detail']] * ($cancelProd['price'] - ($cancelProd['price'] * ($cancelProd['reduction_percent'] / 100)) - $cancelProd['reduction_amount'])), // Including those product with discounts
+                                        'name' => pSQL(Tools::safeOutput($cancelProd['name'])),
+                                        'description_short' => pSQL(Tools::safeOutput($cancelProd['description_short']), true),
+                                        'tax_code' => pSQL(Tools::safeOutput($cancelProd['tax_code'])));
+                }
+
                 // Send to Avalara
                 $commitResult = $this->getTax($products, array('type' => 'ReturnInvoice', 'DocCode' => (int)Tools::getValue('id_order')));
-                if ($commitResult['ResultCode'] == 'Warning' || $commitResult['ResultCode'] == 'Error' || $commitResult['ResultCode'] == 'Exception')
+                if ($commitResult['ResultCode'] == 'Warning' || $commitResult['ResultCode'] == 'Error' || $commitResult['ResultCode'] == 'Exception') {
                     echo $this->_displayConfirmation($this->l('The following error was generated while cancelling the orders you selected. <br /> - '.
                             Tools::safeOutput($commitResult['Messages']['Summary'])), 'error');
-                else
-                {
+                } else {
                     $this->commitToAvalara(array('id_order' => (int)Tools::getValue('id_order')));
                     echo $this->_displayConfirmation($this->l('The products you selected were cancelled.'));
                 }
@@ -727,19 +771,25 @@ class AvalaraTax extends Module
     protected function getDestinationAddress($id_order)
     {
         $order = new Order((int)$id_order);
-        if (!Validate::isLoadedObject($order))
+
+        if (!Validate::isLoadedObject($order)) {
             return false;
+        }
 
         $address = new Address((int)$order->{Configuration::get('PS_TAX_ADDRESS_TYPE')});
-        if (!Validate::isLoadedObject($address))
+
+        if (!Validate::isLoadedObject($address)) {
             return false;
+        }
 
         $state = null;
         if (!empty($address->id_state))
         {
             $state = new State((int)$address->id_state);
-            if (!Validate::isLoadedObject($state))
+
+            if (!Validate::isLoadedObject($state)) {
                 return false;
+            }
         }
 
         return array($address, $state, $order);
@@ -749,27 +799,27 @@ class AvalaraTax extends Module
     {
         list($params['address'], $params['state'], $params['order']) = self::getDestinationAddress((int)$params['id_order']);
 
-        if ($params['newOrderStatus']->id == (int)Configuration::get('AVALARATAX_COMMIT_ID'))
+        if ($params['newOrderStatus']->id == (int)Configuration::get('AVALARATAX_COMMIT_ID')) {
             return $this->commitToAvalara($params);
-        elseif ($params['newOrderStatus']->id == (int)Configuration::get('AVALARATAX_CANCEL_ID'))
-        {
+        } elseif ($params['newOrderStatus']->id == (int)Configuration::get('AVALARATAX_CANCEL_ID')) {
             $params['CancelCode'] = 'V';
             $this->cancelFromAvalara($params);
             return $this->cancelFromAvalara($params);
-        }
-        elseif ($params['newOrderStatus']->id == (int)Configuration::get('AVALARATAX_POST_ID'))
+        } elseif ($params['newOrderStatus']->id == (int)Configuration::get('AVALARATAX_POST_ID')) {
             return $this->postToAvalara($params);
-        elseif ($params['newOrderStatus']->id == (int)Configuration::get('AVALARATAX_REFUND_ID'))
+        } elseif ($params['newOrderStatus']->id == (int)Configuration::get('AVALARATAX_REFUND_ID')) {
             return $this->commitToAvalara($params);
+        }
 
         return false;
     }
 
     public function hookBackOfficeTop()
     {
-        if (Tools::isSubmit('submitAddproduct') || Tools::isSubmit('submitAddproductAndStay'))
+        if (Tools::isSubmit('submitAddproduct') || Tools::isSubmit('submitAddproductAndStay')) {
             Db::getInstance()->Execute('REPLACE INTO `'._DB_PREFIX_.'avalara_taxcodes` (`id_product`, `tax_code`)
                 VALUES ('.(Tools::getIsset(Tools::getValue('id_product')) ? (int)Tools::getValue('id_product') : 0).', \''.pSQL(Tools::safeOutput(Tools::getValue('tax_code'))).'\')');
+        }
 
 
         if ((Tools::getIsset(Tools::getValue('updateproduct')) || Tools::getIsset(Tools::getValue('addproduct'))) && Tools::getIsset(Tools::getValue('id_product')) && (int)Tools::getValue('id_product'))
@@ -901,11 +951,12 @@ class AvalaraTax extends Module
     {
         $buffer = '';
 
-        if (version_compare(_PS_VERSION_,'1.5','>'))
+        if (version_compare(_PS_VERSION_,'1.5','>')) {
             $this->context->controller->addJQueryPlugin('fancybox');
-        else
+        } else {
             $buffer .= '<script type="text/javascript" src="'.__PS_BASE_URI__.'js/jquery/jquery.fancybox-1.3.4.js"></script>
                 <link type="text/css" rel="stylesheet" href="'.__PS_BASE_URI__.'css/jquery.fancybox-1.3.4.css" />';
+        }
 
         if (Tools::isSubmit('SubmitAvalaraTaxSettings'))
         {
@@ -959,11 +1010,17 @@ class AvalaraTax extends Module
             else
             {
                 $message = $this->l('The following error was generated while validating your address:');
-                if (Tools::getIsset($normalizedAddress['Exception']['FaultString']))
+
+                if (Tools::getIsset($normalizedAddress['Exception']['FaultString'])) {
                     $message .= '<br /> - '.Tools::safeOutput($normalizedAddress['Exception']['FaultString']);
-                if (Tools::getIsset($normalizedAddress['Messages']['Summary']))
-                    foreach ($normalizedAddress['Messages']['Summary'] as $summary)
+                }
+
+                if (Tools::getIsset($normalizedAddress['Messages']['Summary'])) {
+                    foreach ($normalizedAddress['Messages']['Summary'] as $summary) {
                         $message .= '<br /> - '.Tools::safeOutput($summary);
+                    }
+                }
+
                 $buffer .= $this->_displayConfirmation($message, 'error');
 
                 Configuration::updateValue('AVALARATAX_ADDRESS_LINE1', Tools::getValue('avalaratax_address_line1'));
@@ -994,13 +1051,17 @@ class AvalaraTax extends Module
 
         $stateList = array();
         $stateList[] = array('id' => '0', 'name' => $this->l('Choose your state (if applicable)'), 'iso_code' => '--');
-        foreach (State::getStates((int)$this->context->cookie->id_lang) as $state)
+
+        foreach (State::getStates((int)$this->context->cookie->id_lang) as $state) {
             $stateList[] = array('id' => $state['id_state'], 'name' => $state['name'], 'iso_code' => $state['iso_code']);
+        }
 
         $countryList = array();
         $countryList[] = array('id' => '0', 'name' => $this->l('Choose your country'), 'iso_code' => '--');
-        foreach (Country::getCountries((int)$this->context->cookie->id_lang, false, null, false) as $country)
+
+        foreach (Country::getCountries((int)$this->context->cookie->id_lang, false, null, false) as $country) {
             $countryList[] = array('id' => $country['id_country'], 'name' => $country['name'], 'iso_code' => $country['iso_code']);
+        }
 
         $buffer .= '<link href="'.$this->_path.'views/css/avalara.css" rel="stylesheet" type="text/css">
         <script type="text/javascript">
@@ -1108,8 +1169,10 @@ else
                 <fieldset class="field-height1">
                     <legend><img src="'.$this->_path.'views/img/icon-config.gif" alt="" />'.$this->l('Configuration').'</legend>
                     <h4>'.$this->l('AvaTax Credentials').'</h4>';
-                    if (Tools::getIsset($connectionTestResult))
+
+                    if (Tools::getIsset($connectionTestResult)) {
                         $buffer .= '<div id="test_connection" style="background: '.Tools::safeOutput($connectionTestResult[1]).';">'.$connectionTestResult[0].'</div>';
+                    }
 
                     $buffer .= '<label>'.$this->l('Account Number').'</label>
                     <div class="margin-form">
@@ -1170,8 +1233,10 @@ else
 
             // Check if the order status exists
             $orderStatusList = array();
-            foreach (Db::getInstance()->ExecuteS('SELECT `id_order_state`, `name` FROM `'._DB_PREFIX_.'order_state_lang` WHERE `id_lang` = '.(int)$this->context->cookie->id_lang) as $v)
+            foreach (Db::getInstance()->ExecuteS('SELECT `id_order_state`, `name` FROM `'._DB_PREFIX_.'order_state_lang` WHERE `id_lang` = '.(int)$this->context->cookie->id_lang) as $v) {
                 $orderStatusList[$v['id_order_state']] = Tools::safeOutput($v['name']);
+            }
+
             $buffer .= '<table class="avalara-table" cellspacing="0" cellpadding="0" width="100%">
                         <th>'.$this->l('Action').'</th>
                         <th>'.$this->l('Order status in your store').'</th>
@@ -1224,15 +1289,19 @@ else
                     <label>'.$this->l('Country').'</label>
                     <div class="margin-form">
                         <select name="avalaratax_country" id="avalaratax_country">';
-            foreach ($countryList as $country)
+
+            foreach ($countryList as $country) {
                 $buffer .= '<option value="'.Tools::substr(Tools::strtoupper($country['iso_code']), 0, 2).'" '.($country['iso_code'] == $confValues['AVALARATAX_COUNTRY'] ? ' selected="selected"' : '').'>'.Tools::safeOutput($country['name']).'</option>';
+            }
+
             $buffer .= '</select>
                     </div>
                     <label id="avalaratax_label_state" >'.$this->l('State').'</label>
                     <div class="margin-form">
                         <select name="avalaratax_state" id="avalaratax_state">';
-            foreach ($stateList as $state)
+            foreach ($stateList as $state) {
                 $buffer .= '<option value="'.Tools::substr(Tools::strtoupper($state['iso_code']), 0, 2).'" '.($state['iso_code'] == $confValues['AVALARATAX_STATE'] ? ' selected="selected"' : '').'>'.Tools::safeOutput($state['name']).'</option>';
+            }
 
             $buffer .= '</select>
                     </div>
@@ -1254,14 +1323,15 @@ else
     */
     private function _displayConfirmation($text = '', $type = 'confirm')
     {
-        if ($type == 'confirm')
+        if ($type == 'confirm') {
             $img = 'ok.gif';
-        elseif ($type == 'warn')
+        } elseif ($type == 'warn') {
             $img = 'warn2.png';
-        elseif ($type == 'error')
+        } elseif ($type == 'error') {
             $img = 'disabled.gif';
-        else
+        } else {
             die('Invalid type.');
+        }
 
         return '<div class="conf '.Tools::safeOutput($type).'">
             <img src="../img/admin/'.$img.'" alt="" title="" />
@@ -1276,8 +1346,10 @@ else
     private function _connectToAvalara()
     {
         $timeout = Configuration::get('AVALARATAX_TIMEOUT');
-        if ((int)$timeout > 0)
+
+        if ((int)$timeout > 0) {
             ini_set('max_execution_time', (int)$timeout);
+        }
 
         include_once(dirname(__FILE__).'/sdk/AvaTax.php');
 
@@ -1305,8 +1377,9 @@ else
                 try
                 {
                     $authorizedTest = $client->isAuthorized('GetTax');
-                    if ($authorizedTest->getResultCode() == SeverityLevel::$Success)
+                    if ($authorizedTest->getResultCode() == SeverityLevel::$Success) {
                         $expirationDate = $authorizedTest->getexpires();
+                    }
                 }
                 catch (SoapFault $exception)
                 {
@@ -1329,10 +1402,13 @@ else
         $this->_connectToAvalara();
         $client = new AddressServiceSoap(Configuration::get('AVALARATAX_MODE'));
 
-        if (!empty($address->id_state))
+        if (!empty($address->id_state)) {
             $state = new State((int)$address->id_state);
-        if (!empty($address->id_country))
+        }
+
+        if (!empty($address->id_country)) {
             $country = new Country((int)$address->id_country);
+        }
 
         $avalaraAddress = new AvalaraAddress($address->address1, $address->address2, null, $address->city,
                                             (Tools::getIsset($state) ? $state->iso_code : null), $address->postcode, (Tools::getIsset($country) ? $country->iso_code : null), 0);
@@ -1345,13 +1421,13 @@ else
             $addresses = $result->ValidAddresses;
 
             $buffer['ResultCode'] = Tools::safeOutput($result->getResultCode());
-            if ($result->getResultCode() != SeverityLevel::$Success)
+            if ($result->getResultCode() != SeverityLevel::$Success) {
                 foreach ($result->getMessages() as $msg)
                 {
                     $buffer['Messages']['Name'][] = Tools::safeOutput($msg->getName());
                     $buffer['Messages']['Summary'][] = Tools::safeOutput($msg->getSummary());
                 }
-            else
+            } else {
                 foreach ($result->getvalidAddresses() as $valid)
                 {
                     $buffer['Normalized']['Line1'] = Tools::safeOutput($valid->getline1());
@@ -1366,6 +1442,7 @@ else
                     $buffer['Normalized']['CarrierRoute'] = Tools::safeOutput($valid->getcarrierRoute());
                     $buffer['Normalized']['AddressType'] = Tools::safeOutput($valid->getaddressType());
                 }
+            }
         }
         catch (SoapFault $exception)
         {
@@ -1390,22 +1467,28 @@ else
     {
         $confValues = Configuration::getMultiple(array('AVALARATAX_COMPANY_CODE', 'AVALARATAX_ADDRESS_LINE1',
                                         'AVALARATAX_ADDRESS_LINE2', 'AVALARATAX_CITY', 'AVALARATAX_STATE', 'AVALARATAX_ZIP_CODE'));
-        if (!Tools::getIsset($params['type']))
+
+        if (!Tools::getIsset($params['type'])) {
             $params['type'] = 'SalesOrder';
+        }
+
         $this->_connectToAvalara();
 
         $client = new TaxServiceSoap(Configuration::get('AVALARATAX_MODE'));
         $request = new GetTaxRequest();
 
-        if (Tools::getIsset($this->context->cart->{Configuration::get('PS_TAX_ADDRESS_TYPE')}))
+        if (Tools::getIsset($this->context->cart->{Configuration::get('PS_TAX_ADDRESS_TYPE')})) {
             $address = new Address((int)$this->context->cart->{Configuration::get('PS_TAX_ADDRESS_TYPE')});
-        elseif (Tools::getIsset($this->context->cookie) && Tools::getIsset($this->context->cookie->id_customer) && $this->context->cookie->id_customer)
+        } elseif (Tools::getIsset($this->context->cookie) && Tools::getIsset($this->context->cookie->id_customer) && $this->context->cookie->id_customer) {
             $address = new Address((int)Db::getInstance()->getValue('SELECT `id_address` FROM `'._DB_PREFIX_.'address`  WHERE `id_customer` = '.(int)$this->context->cookie->id_customer.' AND active = 1 AND deleted = 0'));
+        }
 
         if (Tools::getIsset($address))
         {
-            if (!empty($address->id_state))
+            if (!empty($address->id_state)) {
                 $state = new State((int)$address->id_state);
+            }
+
             $addressDest = array();
             $addressDest['Line1'] = $address->address1;
             $addressDest['Line2'] = $address->address2;
@@ -1425,8 +1508,9 @@ else
                 }
             }
 
-            if (Tools::getIsset($normalizedAddress['Normalized']))
+            if (Tools::getIsset($normalizedAddress['Normalized'])) {
                 $addressDest = $normalizedAddress['Normalized'];
+            }
 
             // Add Destination address (Customer address)
             $destination = new AvalaraAddress();
@@ -1451,22 +1535,22 @@ else
 
         $request->setCompanyCode(Tools::getIsset($confValues['AVALARATAX_COMPANY_CODE']) ? $confValues['AVALARATAX_COMPANY_CODE'] : '');
 
-        if (Tools::getIsset($address->vat_number) && !empty($address->vat_number) && $address->vat_number != 'undefined')
+        if (Tools::getIsset($address->vat_number) && !empty($address->vat_number) && $address->vat_number != 'undefined') {
             $request->setBusinessIdentificationNo($address->vat_number);
+        }
 
         $orderId = Tools::getIsset($params['cart']) ? (int)$params['cart']->id : (int)$params['DocCode'];
         $nowTime = date('mdHis');
 
         // Type: Only supported types are SalesInvoice or SalesOrder
-        if ($params['type'] == 'SalesOrder')            // SalesOrder: Occurs when customer adds product to the cart (generally to check how much the tax will be)
+        if ($params['type'] == 'SalesOrder') {
+            // SalesOrder: Occurs when customer adds product to the cart (generally to check how much the tax will be)
             $request->setDocType(DocumentType::$SalesOrder);
-        elseif ($params['type']  == 'SalesInvoice')         // SalesInvoice: Occurs when customer places an order (It works like commitToAvalara()).
-        {
+        } elseif ($params['type']  == 'SalesInvoice') {
+            // SalesInvoice: Occurs when customer places an order (It works like commitToAvalara()).
             $request->setDocType(DocumentType::$SalesInvoice);
             $orderId = Db::getInstance()->getValue('SELECT `id_order` FROM '._DB_PREFIX_.'orders WHERE `id_cart` = '.(int)$params['cart']->id); // Make sure we got the orderId, even if it was/wasn't passed in $params['DocCode']
-        }
-        elseif ($params['type']  == 'ReturnInvoice')
-        {
+        } elseif ($params['type']  == 'ReturnInvoice') {
             $orderId = Tools::getIsset($params['type']) && $params['type'] == 'ReturnInvoice' ? $orderId.'.'.$nowTime : $orderId;
             $orderDate = Db::getInstance()->ExecuteS('
             SELECT `id_order`, `date_add`
@@ -1482,18 +1566,18 @@ else
             $request->setTaxOverride($taxOverride);
         }
 
-        if (Tools::getIsset($this->context->cookie->id_customer))
+        if (Tools::getIsset($this->context->cookie->id_customer)) {
             $customerCode = $this->context->cookie->id_customer;
-        else
-        {
-            if (Tools::getIsset($params['DocCode']))
+        } else {
+            if (Tools::getIsset($params['DocCode'])) {
                 $id_order = (int)$params['DocCode'];
-            elseif (Tools::getIsset(Tools::getValue('id_order')))
+            } elseif (Tools::getIsset(Tools::getValue('id_order'))) {
                 $id_order = (int)Tools::getValue('id_order');
-            elseif (Tools::getIsset($params['id_order']))
+            } elseif (Tools::getIsset($params['id_order'])) {
                 $id_order = (int)$params['id_order'];
-            else
+            } else {
                 $id_order = 0;
+            }
 
             $customerCode = (int)Db::getInstance()->getValue('SELECT `id_customer` FROM `'._DB_PREFIX_.'orders` WHERE `id_order` = '.(int)$id_order);
         }
@@ -1542,10 +1626,11 @@ else
         foreach ($products as $product)
         {
             // Retrieve the tax_code for the current product if not defined
-            if (Tools::getIsset($params['taxable']) && !$params['taxable'])
+            if (Tools::getIsset($params['taxable']) && !$params['taxable']) {
                 $taxCode = 'NT';
-            else
+            } else {
                 $taxCode = !Tools::getIsset($product['tax_code']) ? $this->getProductTaxCode((int)$product['id_product']) : $product['tax_code'];
+            }
 
             if (Tools::getIsset($product['id_product']))
             {
@@ -1582,8 +1667,7 @@ else
         {
             $result = $client->getTax($request);
             $buffer['ResultCode'] = Tools::safeOutput($result->getResultCode());
-            if ($result->getResultCode() == SeverityLevel::$Success)
-            {
+            if ($result->getResultCode() == SeverityLevel::$Success) {
                 $buffer['DocCode'] = Tools::safeOutput($request->getDocCode());
                 $buffer['TotalAmount'] = Tools::safeOutput($result->getTotalAmount());
                 $buffer['TotalDiscount'] = Tools::safeOutput($result->getTotalDiscount());
@@ -1606,13 +1690,13 @@ else
                         $buffer['TaxLines'][$ctl->getNo()]['TaxDetails']['Tax'] = Tools::safeOutput($ctd->getTax());
                     }
                 }
-            }
-            else
+            } else {
                 foreach ($result->getMessages() as $msg)
                 {
                     $buffer['Messages']['Name'] = Tools::safeOutput($msg->getName());
                     $buffer['Messages']['Summary'] = Tools::safeOutput($msg->getSummary());
                 }
+            }
         }
         catch (SoapFault $exception)
         {
@@ -1639,26 +1723,24 @@ else
     {
         $this->_connectToAvalara();
         $client = new TaxServiceSoap(Configuration::get('AVALARATAX_MODE'));
-        if ($type == 'commit')
+        if ($type == 'commit') {
             $request= new CommitTaxRequest();
-        elseif ($type == 'post')
-        {
+        } elseif ($type == 'post') {
             $request= new PostTaxRequest();
             $request->setDocDate($params['DocDate']);
             $request->setTotalAmount($params['TotalAmount']);
             $request->setTotalTax($params['TotalTax']);
-        }
-        elseif ($type == 'cancel')
-        {
+        } elseif ($type == 'cancel') {
             $request= new CancelTaxRequest();
-            if ($params['CancelCode'] == 'D')
+            if ($params['CancelCode'] == 'D') {
                 $code = CancelCode::$DocDeleted;
-            elseif ($params['CancelCode'] == 'P')
+            } elseif ($params['CancelCode'] == 'P') {
                 $code = CancelCode::$PostFailed;
-            elseif ($params['CancelCode'] == 'V')
+            } elseif ($params['CancelCode'] == 'V') {
                 $code = CancelCode::$DocVoided;
-            else
+            } else {
                 die('Invalid cancel code.');
+            }
 
             $request->setCancelCode($code);
         }
@@ -1678,16 +1760,15 @@ else
         $buffer = array();
         try
         {
-            if ($type == 'commit')
+            if ($type == 'commit') {
                 $result = $client->commitTax($request);
-            elseif ($type == 'post')
+            } elseif ($type == 'post') {
                 $result = $client->postTax($request);
-            elseif ($type == 'cancel')
+            } elseif ($type == 'cancel') {
                 $result = $client->cancelTax($request);
-            elseif ($type == 'isAuthorized')
+            } elseif ($type == 'isAuthorized') {
                 $result = $client->isAuthorized('GetTax');
-            elseif ($type == 'history')
-            {
+            } elseif ($type == 'history') {
                 $result = $client->getTaxHistory($request);
                 $buffer['Invoice'] = $result->getGetTaxRequest()->getDocCode();
                 $buffer['Status'] = $result->getGetTaxResult()->getDocStatus();
@@ -1695,12 +1776,12 @@ else
 
             $buffer['ResultCode'] = $result->getResultCode();
 
-            if ($result->getResultCode() != SeverityLevel::$Success)
-                foreach ($result->getMessages() as $msg)
-                {
+            if ($result->getResultCode() != SeverityLevel::$Success) {
+                foreach ($result->getMessages() as $msg) {
                     $buffer['Messages']['Name'] = Tools::safeOutput($msg->getName());
                     $buffer['Messages']['Summary'] = Tools::safeOutput($msg->getSummary());
                 }
+            }
         }
         catch (SoapFault $exception)
         {
@@ -1713,8 +1794,9 @@ else
 
     public function postToAvalara($params)
     {
-        if (!Tools::getIsset($params['address']))
+        if (!Tools::getIsset($params['address'])) {
             list($params['address'], $params['state'], $params['order']) = self::getDestinationAddress((int)$params['id_order']);
+        }
 
         $destination = new AvalaraAddress();
         $destination->setLine1($params['address']->address1);
@@ -1743,19 +1825,21 @@ else
                                                     WHERE pl.`id_lang` = '.(int)Configuration::get('PS_LANG_DEFAULT').' AND od.`id_order` = '.(Tools::getIsset(Tools::getValue('id_order')) ? (int)Tools::getValue('id_order') : (int)$params['id_order']));
 
         $products = array();
-        foreach ($allProducts as $v)
+        foreach ($allProducts as $v) {
             $products[] = array('id_product' => $v['id_product'],
-                                        'name' => $v['name'],
-                                        'description_short' => $v['description_short'],
-                                        'quantity' => $v['quantity'],
-                                        'total' => $v['quantity'] * ($v['price'] - ($v['price'] * ($v['reduction_percent'] / 100)) - ($v['reduction_amount'])), // Including those products with discounts
-                                        'tax_code' => $v['tax_code'],
-                                        'taxable' => (bool)$this->getProductTaxable((int)$v['id_product']));
+                                'name' => $v['name'],
+                                'description_short' => $v['description_short'],
+                                'quantity' => $v['quantity'],
+                                'total' => $v['quantity'] * ($v['price'] - ($v['price'] * ($v['reduction_percent'] / 100)) - ($v['reduction_amount'])), // Including those products with discounts
+                                'tax_code' => $v['tax_code'],
+                                'taxable' => (bool)$this->getProductTaxable((int)$v['id_product']));
+        }
 
         $taxable = true;
         //check if it is outside the state and if we are in united state and if conf AVALARATAX_TAX_OUTSIDE IS ENABLE
-        if (Tools::getIsset($params['state']) && !Configuration::get('AVALARATAX_TAX_OUTSIDE') && $params['state']->iso_code != Configuration::get('AVALARATAX_STATE'))
+        if (Tools::getIsset($params['state']) && !Configuration::get('AVALARATAX_TAX_OUTSIDE') && $params['state']->iso_code != Configuration::get('AVALARATAX_STATE')) {
             $taxable = false;
+        }
 
         $cart = new Cart((int)$order->id_cart);
         $getTaxResult = $this->getTax($products, array('type' => 'SalesInvoice', 'cart' => $cart, 'id_order' => Tools::getIsset(Tools::getValue('id_order')) ? (int)Tools::getValue('id_order') : (int)$params['id_order'], 'taxable' => $taxable));
@@ -1765,9 +1849,10 @@ else
                                             'TotalTax' => (float)$getTaxResult['TotalTax']));
 
 
-        if (Tools::getIsset($commitResult['ResultCode']) && ($commitResult['ResultCode'] == 'Warning' || $commitResult['ResultCode'] == 'Error' || $commitResult['ResultCode'] == 'Exception'))
+        if (Tools::getIsset($commitResult['ResultCode']) && ($commitResult['ResultCode'] == 'Warning' || $commitResult['ResultCode'] == 'Error' || $commitResult['ResultCode'] == 'Exception')) {
             return $this->_displayConfirmation($this->l('The following error was generated while cancelling the orders you selected.'.
                     '<br /> - '.Tools::safeOutput($commitResult['Messages']['Summary'])), 'error');
+        }
 
         return $this->_displayConfirmation($this->l('The orders you selected were posted.'));
     }
@@ -1780,12 +1865,13 @@ else
         if (Tools::getIsset($commitResult['ResultCode']) && $commitResult['ResultCode'] == 'Success')
         {
             $commitResult = $this->tax('commit', array('DocCode' => (int)$params['id_order']));
-            if (Tools::getIsset($commitResult['Exception']) || Tools::getIsset($commitResult['ResultCode'])   && ($commitResult['ResultCode'] == 'Warning' || $commitResult['ResultCode'] == 'Error' || $commitResult['ResultCode'] == 'Exception'))
+            if (Tools::getIsset($commitResult['Exception']) || Tools::getIsset($commitResult['ResultCode']) && ($commitResult['ResultCode'] == 'Warning' || $commitResult['ResultCode'] == 'Error' || $commitResult['ResultCode'] == 'Exception')) {
                 return ($this->_displayConfirmation($this->l('The following error was generated while committing the orders you selected to Avalara.').
                         (Tools::getIsset($commitResult['Messages']) ? '<br /> - '.Tools::safeOutput($commitResult['Messages']['Summary']) : '').
                         (Tools::getIsset($commitResult['Exception']) ? '<br /> - '.Tools::safeOutput($commitResult['Exception']['FaultString']) : ''), 'error'));
-            else
+            } else {
                 return $this->_displayConfirmation($this->l('The orders you selected were committed.'));
+            }
         }
 
         // Orders prior Avalara module installation will trigger an "Invalid Status" error. For this reason, the user won't be alerted here.
@@ -1801,18 +1887,21 @@ else
 
         if (!($commitResult['Status'] == 'Committed' && (int)$hasRefund[0]['qtyProductRefunded'] > 0))
         {
-            if (Tools::getIsset($commitResult['Status']) && $commitResult['Status'] == 'Temporary')
+            if (Tools::getIsset($commitResult['Status']) && $commitResult['Status'] == 'Temporary') {
                 $this->postToAvalara($params);
+            }
+
             $commitResult = $this->tax('cancel', array('DocCode' => (int)$params['id_order'],
                                                 'CancelCode' => Tools::getIsset($params['CancelCode']) ? $params['CancelCode'] : 'V' ));
             if (Tools::getIsset($commitResult['ResultCode'])
-                && ( $commitResult['ResultCode'] == 'Warning'
-                    || $commitResult['ResultCode'] == 'Error'
-                    || $commitResult['ResultCode'] == 'Exception'))
+            && ( $commitResult['ResultCode'] == 'Warning'
+            || $commitResult['ResultCode'] == 'Error'
+            || $commitResult['ResultCode'] == 'Exception')) {
                 return $this->_displayConfirmation($this->l('The following error was generated while cancelling the orders you selected.').
                     ' <br /> - '.Tools::safeOutput($commitResult['Messages']['Summary']), 'error');
-            else
+            } else {
                 return $this->_displayConfirmation($this->l('The orders you selected were cancelled.'));
+            }
         }
     }
 
@@ -1881,17 +1970,19 @@ else
 function avalaraAutoload($className)
 {
     $className = str_replace(chr(0), '', $className);
-    if (!preg_match('/^\w+$/', $className))
+    if (!preg_match('/^\w+$/', $className)) {
         die('Invalid classname.');
+    }
 
     $moduleDir = dirname(__FILE__).'/';
 
-    if (file_exists($moduleDir.$className.'.php'))
+    if (file_exists($moduleDir.$className.'.php')) {
         require_once($moduleDir.$className.'.php');
-    elseif (file_exists($moduleDir.'sdk/classes/'.$className.'.class.php'))
+    } elseif (file_exists($moduleDir.'sdk/classes/'.$className.'.class.php')) {
         require_once($moduleDir.'sdk/classes/'.$className.'.class.php');
-    elseif (file_exists($moduleDir.'sdk/classes/BatchSvc/'.$className.'.class.php'))
+    } elseif (file_exists($moduleDir.'sdk/classes/BatchSvc/'.$className.'.class.php')) {
         require_once($moduleDir.'sdk/classes/BatchSvc/'.$className.'.class.php');
-    elseif (function_exists('__autoload'))
+    } elseif (function_exists('__autoload')) {
         __autoload($className);
+    }
 }
