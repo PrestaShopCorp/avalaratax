@@ -1002,7 +1002,7 @@ class AvalaraTax extends Module
     foreach (Country::getCountries((int)$this->context->cookie->id_lang, false, null, false) as $country)
       $countryList[] = array('id' => $country['id_country'], 'name' => $country['name'], 'iso_code' => $country['iso_code']);
 
-    $buffer .= '<link href="'.$this->_path.'css/avalara.css" rel="stylesheet" type="text/css">
+    $buffer .= '<link href="'.$this->_path.'views/css/avalara.css" rel="stylesheet" type="text/css">
     <script type="text/javascript">
       /* Fancybox */
       $(\'a.avalara-video-btn\').live(\'click\', function(){
@@ -1080,15 +1080,15 @@ else
 
     </script>
     <div class="avalara-wrap">
-      <p class="avalara-intro"><a href="http://www.info.avalara.com/prestashop" class="avalara-logo" target="_blank"><img src="'.$this->_path.'img/avalara_logo.png" alt="Avalara" border="0" /></a><a href="http://www.info.avalara.com/prestashop" class="avalara-link" target="_blank">'.$this->l('Create an account').'</a>'.$this->l('Avalara and PrestaShop have partnered to provide the easiest way for you to accurately calculate and file sales tax.').'</p>
+      <p class="avalara-intro"><a href="http://www.info.avalara.com/prestashop" class="avalara-logo" target="_blank"><img src="'.$this->_path.'views/img/avalara_logo.png" alt="Avalara" border="0" /></a><a href="http://www.info.avalara.com/prestashop" class="avalara-link" target="_blank">'.$this->l('Create an account').'</a>'.$this->l('Avalara and PrestaShop have partnered to provide the easiest way for you to accurately calculate and file sales tax.').'</p>
       <div class="clear"></div>
       <div class="avalara-content">
         <div class="avalara-video">
-          <a href="http://www.youtube.com/embed/tm1tENVdcQ8" class="avalara-video-btn"><img src="'.$this->_path.'img/avalara-video-screen.jpg" alt="Avalara Video" /><img src="'.$this->_path.'img/btn-video.png" alt="" class="video-icon" /></a>
+          <a href="http://www.youtube.com/embed/tm1tENVdcQ8" class="avalara-video-btn"><img src="'.$this->_path.'views/img/avalara-video-screen.jpg" alt="Avalara Video" /><img src="'.$this->_path.'views/img/btn-video.png" alt="" class="video-icon" /></a>
         </div>
         <h3>'.$this->l('Doing sales tax right is simple with Avalara.').'</h3>
         <p>'.$this->l('We do all of the research and automate the process for you, ensuring that the system is up-to-date with the most recent sales tax and VAT rates and rules in every state and country, so you don’t have to.  As a cloud-based service, AvaTax eliminates ongoing maintenance and support.  It provides you with a complete solution to manage your sales tax needs.').'</p>
-        <img src="'.$this->_path.'img/avatax_badge.png" alt="AvaTax Certified" class="avatax-badge" />
+        <img src="'.$this->_path.'views/img/avatax_badge.png" alt="AvaTax Certified" class="avatax-badge" />
         <ul>
           <li>'.$this->l('Address Validation included').'</li>
           <li>'.$this->l('Rooftop Accurate Calculations').'</li>
@@ -1100,13 +1100,13 @@ else
         <p class="contact-avalara"><a href="http://www.info.avalara.com/prestashop" target="_blank">'.$this->l('Contact Avalara Today to Start Your Service').'</a></p>
       </div>
       <fieldset class="field-height1 right-fieldset">
-      <legend><img src="'.$this->_path.'img/icon-console.gif" alt="" />'.$this->l('AvaTax Admin Console').'</legend>
+      <legend><img src="'.$this->_path.'views/img/icon-console.gif" alt="" />'.$this->l('AvaTax Admin Console').'</legend>
         <p><a href="https://admin-avatax.avalara.net/" target="_blank">'.$this->l('Log-in to AvaTax Admin Console').'</a></p>
-        <a href="https://admin-avatax.avalara.net/" target="_blank"><img src="'.$this->_path.'img/avatax-logo.png" alt="AvaTax" class="avatax-logo" /></a>
+        <a href="https://admin-avatax.avalara.net/" target="_blank"><img src="'.$this->_path.'views/img/avatax-logo.png" alt="AvaTax" class="avatax-logo" /></a>
       </fieldset>
       <form action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'" method="post" class="left-form">
         <fieldset class="field-height1">
-          <legend><img src="'.$this->_path.'img/icon-config.gif" alt="" />'.$this->l('Configuration').'</legend>
+          <legend><img src="'.$this->_path.'views/img/icon-config.gif" alt="" />'.$this->l('Configuration').'</legend>
           <h4>'.$this->l('AvaTax Credentials').'</h4>';
           if (isset($connectionTestResult))
             $buffer .= '<div id="test_connection" style="background: '.Tools::safeOutput($connectionTestResult[1]).';">'.$connectionTestResult[0].'</div>';
@@ -1128,13 +1128,13 @@ else
             <input type="text" name="avalaratax_company_code" value="'.(isset($confValues['AVALARATAX_COMPANY_CODE']) ? Tools::safeOutput($confValues['AVALARATAX_COMPANY_CODE']) : '').'" />
           </div>
           <div class="margin-form">
-            <input type="submit" class="button" name="SubmitAvalaraTaxSettings" value="'.$this->l('Save Settings').'" /><img src="'.$this->_path.'img/icon-connection.gif" alt="" class="icon-connection" /><input type="submit" id="avalaratax_test_connection" class="button" name="SubmitAvalaraTestConnection" value="'.$this->l('Click here to Test Connection').'" />
+            <input type="submit" class="button" name="SubmitAvalaraTaxSettings" value="'.$this->l('Save Settings').'" /><img src="'.$this->_path.'views/img/icon-connection.gif" alt="" class="icon-connection" /><input type="submit" id="avalaratax_test_connection" class="button" name="SubmitAvalaraTestConnection" value="'.$this->l('Click here to Test Connection').'" />
           </div>
         </fieldset>
       </form>
       <form action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'" method="post" class="form-half reset-label">
         <fieldset class="field-height MR7">
-          <legend><img src="'.$this->_path.'img/icon-options.gif" alt="" />'.$this->l('Options').'</legend>
+          <legend><img src="'.$this->_path.'views/img/icon-options.gif" alt="" />'.$this->l('Options').'</legend>
           <label>'.$this->l('Enable address validation').'</label>
           <div class="margin-form">
             <input type="checkbox" name="avalaratax_address_validation" value="1"'.(isset($confValues['AVALARATAX_ADDRESS_VALIDATION']) && $confValues['AVALARATAX_ADDRESS_VALIDATION'] ? ' checked="checked"' : '').' />
@@ -1204,7 +1204,7 @@ else
       </form>
       <form action="'.Tools::safeOutput($_SERVER['REQUEST_URI']).'" method="post" class="form-half">
         <fieldset class="field-height ML7">
-          <legend><img src="'.$this->_path.'img/icon-address.gif" alt="" />'.$this->l('Default Origin Address and Tax Information').'</legend>
+          <legend><img src="'.$this->_path.'views/img/icon-address.gif" alt="" />'.$this->l('Default Origin Address and Tax Information').'</legend>
           <label>'.$this->l('Address Line 1').'</label>
           <div class="margin-form">
             <input type="text" name="avalaratax_address_line1" value="'.(isset($confValues['AVALARATAX_ADDRESS_LINE1']) ? Tools::safeOutput($confValues['AVALARATAX_ADDRESS_LINE1']) : '').'" />
