@@ -313,30 +313,30 @@ class AvalaraTax extends Module
   // $params['id_order_detail']
   public function hookActionProductCancel($params)
   {
-    if (Tools::getIsset($_POST['cancelProduct']))
+    if (Tools::getIsset(Tools::getValue('cancelProduct')))
     {
-      $order = new Order((int)$_POST['id_order']);
+      $order = new Order((int)Tools::getValue('id_order'));
       if (!Validate::isLoadedObject($order))
         return false;
       if ($order->invoice_number)
       {
         // Get all the cancel product's IDs
         $cancelledIdsOrderDetail = array();
-        foreach ($_POST['cancelQuantity'] as $idOrderDetail => $qty)
+        foreach (Tools::getValue('cancelQuantity') as $idOrderDetail => $qty)
           if ($qty > 0)
             $cancelledIdsOrderDetail[] = (int)$idOrderDetail;
         $cancelledIdsOrderDetail = implode(', ', $cancelledIdsOrderDetail);
 
         // Fill temp table
         Db::getInstance()->Execute('INSERT INTO '._DB_PREFIX_.'avalara_temp (`id_order`, `id_order_detail`)
-                    VALUES ('.(int)$_POST['id_order'].', '.(int)$params['id_order_detail'].')');
+                    VALUES ('.(int)Tools::getValue('id_order').', '.(int)$params['id_order_detail'].')');
         // Check if we are at the end of the loop
         $totalLoop = Db::getInstance()->ExecuteS('SELECT COUNT(`id_order`) as totalLines
                             FROM `'._DB_PREFIX_.'avalara_temp`
                             WHERE `id_order_detail` IN ('.pSQL($cancelledIdsOrderDetail).')');
 
         // We haven't reached the end of the returned products loop, exit this call of the hook early
-        if ($totalLoop[0]['totalLines'] != count(array_filter($_POST['cancelQuantity'])))
+        if ($totalLoop[0]['totalLines'] != count(array_filter(Tools::getValue('cancelQuantity'))))
           return false;
 
         // We should have reached the last call of this hook (all returned products are in our temp table)
@@ -351,19 +351,19 @@ class AvalaraTax extends Module
                                     LEFT JOIN '._DB_PREFIX_.'product p ON (p.id_product = od.product_id)
                                     LEFT JOIN '._DB_PREFIX_.'product_lang pl ON (pl.id_product = p.id_product)
                                     LEFT JOIN '._DB_PREFIX_.'avalara_taxcodes atc ON (atc.id_product = p.id_product)
-                                    WHERE pl.`id_lang` = '.(int)Configuration::get('PS_LANG_DEFAULT').' AND od.`id_order` = '.(int)$_POST['id_order'].'
+                                    WHERE pl.`id_lang` = '.(int)Configuration::get('PS_LANG_DEFAULT').' AND od.`id_order` = '.(int)Tools::getValue('id_order').'
                                     AND od.`id_order_detail` IN ('.pSQL($cancelledIdsOrderDetail).')');
         // Build the product list
         $products = array();
         foreach ($cancelledProdIdsDetails as $cancelProd)
           $products[] = array('id_product' => (int)$cancelProd['id_product'],
-                        'quantity' => (int)$_POST['cancelQuantity'][$cancelProd['id_order_detail']],
-                        'total' => pSQL($_POST['cancelQuantity'][$cancelProd['id_order_detail']] * ($cancelProd['price'] - ($cancelProd['price'] * ($cancelProd['reduction_percent'] / 100)) - $cancelProd['reduction_amount'])), // Including those product with discounts
+                        'quantity' => (int)Tools::getValue('cancelQuantity')[$cancelProd['id_order_detail']],
+                        'total' => pSQL(Tools::getValue('cancelQuantity')[$cancelProd['id_order_detail']] * ($cancelProd['price'] - ($cancelProd['price'] * ($cancelProd['reduction_percent'] / 100)) - $cancelProd['reduction_amount'])), // Including those product with discounts
                         'name' => pSQL(Tools::safeOutput($cancelProd['name'])),
                         'description_short' => pSQL(Tools::safeOutput($cancelProd['description_short']), true),
                         'tax_code' => pSQL(Tools::safeOutput($cancelProd['tax_code'])));
         // Send to Avalara
-        $commitResult = $this->getTax($products, array('type' => 'ReturnInvoice', 'DocCode' => (int)$_POST['id_order']));
+        $commitResult = $this->getTax($products, array('type' => 'ReturnInvoice', 'DocCode' => (int)Tools::getValue('id_order')));
 
         if ($commitResult['ResultCode'] == 'Warning' || $commitResult['ResultCode'] == 'Error' || $commitResult['ResultCode'] == 'Exception')
           echo $this->_displayConfirmation($this->l('The following error was generated while cancelling the orders you selected. <br /> - '.
@@ -371,7 +371,7 @@ class AvalaraTax extends Module
         else
         {
           // This seems to be causing returns to improperly adjust the commit date of the orignal transaction
-          // $this->commitToAvalara(array('id_order' => (int)$_POST['id_order']));
+          // $this->commitToAvalara(array('id_order' => (int)Tools::getValue('id_order')));
 
           echo $this->_displayConfirmation($this->l('The products you selected were cancelled.'));
         }
@@ -663,29 +663,29 @@ class AvalaraTax extends Module
       return false;
     }
 
-    if (Tools::getIsset($_POST['cancelProduct']))
+    if (Tools::getIsset(Tools::getValue('cancelProduct')))
     {
-      $order = new Order((int)$_POST['id_order']);
+      $order = new Order((int)Tools::getValue('id_order'));
       if (!Validate::isLoadedObject($order))
         return false;
       if ($order->invoice_number)
       {
         // Get all the cancel product's IDs
         $cancelledIdsOrderDetail = array();
-        foreach ($_POST['cancelQuantity'] as $idOrderDetail => $qty)
+        foreach (Tools::getValue('cancelQuantity') as $idOrderDetail => $qty)
           if ($qty > 0)
             $cancelledIdsOrderDetail[] = (int)$idOrderDetail;
         $cancelledIdsOrderDetail = implode(', ', $cancelledIdsOrderDetail);
 
         // Fill temp table
         Db::getInstance()->Execute('INSERT INTO '._DB_PREFIX_.'avalara_temp (`id_order`, `id_order_detail`)
-                    VALUES ('.(int)$_POST['id_order'].', '.(int)$params['id_order_detail'].')');
+                    VALUES ('.(int)Tools::getValue('id_order').', '.(int)$params['id_order_detail'].')');
         // Check if we are at the end of the loop
         $totalLoop = Db::getInstance()->ExecuteS('SELECT COUNT(`id_order`) as totalLines
                             FROM `'._DB_PREFIX_.'avalara_temp`
                             WHERE `id_order_detail` IN ('.pSQL($cancelledIdsOrderDetail).')');
 
-        if ($totalLoop[0]['totalLines'] != count(array_filter($_POST['cancelQuantity'])))
+        if ($totalLoop[0]['totalLines'] != count(array_filter(Tools::getValue('cancelQuantity'))))
           return false;
 
         // Clean the temp table because we are at the end of the loop
@@ -699,25 +699,25 @@ class AvalaraTax extends Module
                                     LEFT JOIN '._DB_PREFIX_.'product p ON (p.id_product = od.product_id)
                                     LEFT JOIN '._DB_PREFIX_.'product_lang pl ON (pl.id_product = p.id_product)
                                     LEFT JOIN '._DB_PREFIX_.'avalara_taxcodes atc ON (atc.id_product = p.id_product)
-                                    WHERE pl.`id_lang` = '.(int)Configuration::get('PS_LANG_DEFAULT').' AND od.`id_order` = '.(int)$_POST['id_order'].'
+                                    WHERE pl.`id_lang` = '.(int)Configuration::get('PS_LANG_DEFAULT').' AND od.`id_order` = '.(int)Tools::getValue('id_order').'
                                     AND od.`id_order_detail` IN ('.pSQL($cancelledIdsOrderDetail).')');
         // Build the product list
         $products = array();
         foreach ($cancelledProdIdsDetails as $cancelProd)
           $products[] = array('id_product' => (int)$cancelProd['id_product'],
-                        'quantity' => (int)$_POST['cancelQuantity'][$cancelProd['id_order_detail']],
-                        'total' => pSQL($_POST['cancelQuantity'][$cancelProd['id_order_detail']] * ($cancelProd['price'] - ($cancelProd['price'] * ($cancelProd['reduction_percent'] / 100)) - $cancelProd['reduction_amount'])), // Including those product with discounts
+                        'quantity' => (int)Tools::getValue('cancelQuantity')[$cancelProd['id_order_detail']],
+                        'total' => pSQL(Tools::getValue('cancelQuantity')[$cancelProd['id_order_detail']] * ($cancelProd['price'] - ($cancelProd['price'] * ($cancelProd['reduction_percent'] / 100)) - $cancelProd['reduction_amount'])), // Including those product with discounts
                         'name' => pSQL(Tools::safeOutput($cancelProd['name'])),
                         'description_short' => pSQL(Tools::safeOutput($cancelProd['description_short']), true),
                         'tax_code' => pSQL(Tools::safeOutput($cancelProd['tax_code'])));
         // Send to Avalara
-        $commitResult = $this->getTax($products, array('type' => 'ReturnInvoice', 'DocCode' => (int)$_POST['id_order']));
+        $commitResult = $this->getTax($products, array('type' => 'ReturnInvoice', 'DocCode' => (int)Tools::getValue('id_order')));
         if ($commitResult['ResultCode'] == 'Warning' || $commitResult['ResultCode'] == 'Error' || $commitResult['ResultCode'] == 'Exception')
           echo $this->_displayConfirmation($this->l('The following error was generated while cancelling the orders you selected. <br /> - '.
               Tools::safeOutput($commitResult['Messages']['Summary'])), 'error');
         else
         {
-          $this->commitToAvalara(array('id_order' => (int)$_POST['id_order']));
+          $this->commitToAvalara(array('id_order' => (int)Tools::getValue('id_order')));
           echo $this->_displayConfirmation($this->l('The products you selected were cancelled.'));
         }
       }
@@ -769,7 +769,7 @@ class AvalaraTax extends Module
   {
     if (Tools::isSubmit('submitAddproduct') || Tools::isSubmit('submitAddproductAndStay'))
       Db::getInstance()->Execute('REPLACE INTO `'._DB_PREFIX_.'avalara_taxcodes` (`id_product`, `tax_code`)
-        VALUES ('.(Tools::getIsset($_GET['id_product']) ? (int)$_GET['id_product'] : 0).', \''.pSQL(Tools::safeOutput($_POST['tax_code'])).'\')');
+        VALUES ('.(Tools::getIsset($_GET['id_product']) ? (int)$_GET['id_product'] : 0).', \''.pSQL(Tools::safeOutput(Tools::getValue('tax_code'))).'\')');
 
 
     if ((Tools::getIsset($_GET['updateproduct']) || Tools::getIsset($_GET['addproduct'])) && Tools::getIsset($_GET['id_product']) && (int)$_GET['id_product'])
@@ -1488,8 +1488,8 @@ else
     {
       if (Tools::getIsset($params['DocCode']))
         $id_order = (int)$params['DocCode'];
-      elseif (Tools::getIsset($_POST['id_order']))
-        $id_order = (int)$_POST['id_order'];
+      elseif (Tools::getIsset(Tools::getValue('id_order')))
+        $id_order = (int)Tools::getValue('id_order');
       elseif (Tools::getIsset($params['id_order']))
         $id_order = (int)$params['id_order'];
       else
@@ -1732,7 +1732,7 @@ else
     }
 
     // Grab the info to post to Avalara in English.
-    $order = new Order((Tools::getIsset($_POST['id_order']) ? (int)$_POST['id_order'] : (int)$params['id_order']));
+    $order = new Order((Tools::getIsset(Tools::getValue('id_order')) ? (int)Tools::getValue('id_order') : (int)$params['id_order']));
     $allProducts = Db::getInstance()->ExecuteS('SELECT p.`id_product`, pl.`name`, pl.`description_short`,
                           od.`product_price` as price, od.`reduction_percent`,
                           od.`reduction_amount`, od.`product_quantity` as quantity, atc.`tax_code`
@@ -1740,7 +1740,7 @@ else
                           LEFT JOIN `'._DB_PREFIX_.'product` p ON (p.id_product = od.product_id)
                           LEFT JOIN `'._DB_PREFIX_.'product_lang` pl ON (pl.id_product = p.id_product)
                           LEFT JOIN `'._DB_PREFIX_.'avalara_taxcodes` atc ON (atc.id_product = p.id_product)
-                          WHERE pl.`id_lang` = '.(int)Configuration::get('PS_LANG_DEFAULT').' AND od.`id_order` = '.(Tools::getIsset($_POST['id_order']) ? (int)$_POST['id_order'] : (int)$params['id_order']));
+                          WHERE pl.`id_lang` = '.(int)Configuration::get('PS_LANG_DEFAULT').' AND od.`id_order` = '.(Tools::getIsset(Tools::getValue('id_order')) ? (int)Tools::getValue('id_order') : (int)$params['id_order']));
 
     $products = array();
     foreach ($allProducts as $v)
@@ -1758,9 +1758,9 @@ else
       $taxable = false;
 
     $cart = new Cart((int)$order->id_cart);
-    $getTaxResult = $this->getTax($products, array('type' => 'SalesInvoice', 'cart' => $cart, 'id_order' => Tools::getIsset($_POST['id_order']) ? (int)$_POST['id_order'] : (int)$params['id_order'], 'taxable' => $taxable));
+    $getTaxResult = $this->getTax($products, array('type' => 'SalesInvoice', 'cart' => $cart, 'id_order' => Tools::getIsset(Tools::getValue('id_order')) ? (int)Tools::getValue('id_order') : (int)$params['id_order'], 'taxable' => $taxable));
 
-    $commitResult = $this->tax('post', array('DocCode' => (Tools::getIsset($_POST['id_order']) ? (int)$_POST['id_order'] : (int)$params['id_order']),
+    $commitResult = $this->tax('post', array('DocCode' => (Tools::getIsset(Tools::getValue('id_order')) ? (int)Tools::getValue('id_order') : (int)$params['id_order']),
                       'DocDate' => date('Y-m-d'), 'IdCustomer' => (int)$cart->id_customer,  'TotalAmount' => (float)$getTaxResult['TotalAmount'],
                       'TotalTax' => (float)$getTaxResult['TotalTax']));
 
@@ -1821,28 +1821,28 @@ else
   */
   public function fixPOST()
   {
-    $address = new Address(Tools::getIsset($_POST['id_address']) ? (int)$_POST['id_address'] : null);
+    $address = new Address(Tools::getIsset(Tools::getValue('id_address')) ? (int)Tools::getValue('id_address') : null);
 
     /* Validate address only in the U.S. and Canada - if the Address Validation feature has been turned on in the module's configuration */
     if (($address->id_country == Country::getByIso('US') || $address->id_country == Country::getByIso('CA')) && $this->tax('isAuthorized') && Configuration::get('AVALARATAX_ADDRESS_VALIDATION'))
     {
-      $address->address1 = Tools::getIsset($_POST['address1']) ? $_POST['address1'] : null;
-      $address->address2 = Tools::getIsset($_POST['address2']) ? $_POST['address2'] : null;
-      $address->city = Tools::getIsset($_POST['city']) ? $_POST['city'] : null;
-      $address->region = Tools::getIsset($_POST['region']) ? $_POST['region'] : null;
-      $address->postcode = Tools::getIsset($_POST['postcode']) ? $_POST['postcode'] : null;
-      $address->id_country = Tools::getIsset($_POST['id_country']) ? $_POST['id_country'] : null;
-      $address->id_state = Tools::getIsset($_POST['id_state']) ? (int)$_POST['id_state'] : null;
+      $address->address1 = Tools::getIsset(Tools::getValue('address1')) ? Tools::getValue('address1') : null;
+      $address->address2 = Tools::getIsset(Tools::getValue('address2')) ? Tools::getValue('address2') : null;
+      $address->city = Tools::getIsset(Tools::getValue('city')) ? Tools::getValue('city') : null;
+      $address->region = Tools::getIsset(Tools::getValue('region')) ? Tools::getValue('region') : null;
+      $address->postcode = Tools::getIsset(Tools::getValue('postcode')) ? Tools::getValue('postcode') : null;
+      $address->id_country = Tools::getIsset(Tools::getValue('id_country')) ? Tools::getValue('id_country') : null;
+      $address->id_state = Tools::getIsset(Tools::getValue('id_state')) ? (int)Tools::getValue('id_state') : null;
 
       $normalizedAddress = $this->validateAddress($address);
       if (Tools::getIsset($normalizedAddress['ResultCode']) && $normalizedAddress['ResultCode'] == 'Success')
       {
         Db::getInstance()->Execute('INSERT INTO '._DB_PREFIX_.'avalara_address_validation_cache (id_address, date_add) VALUES ('.(int)$address->id.', \''.pSQL(date('Y-m-d H:i:s')).'\') ON DUPLICATE KEY UPDATE date_add = \''.pSQL(date('Y-m-d H:i:s')).'\'');
 
-        $_POST['address1'] = Tools::safeOutput($normalizedAddress['Normalized']['Line1']);
-        $_POST['address2'] = Tools::safeOutput($normalizedAddress['Normalized']['Line2']);
-        $_POST['city'] = Tools::safeOutput($normalizedAddress['Normalized']['City']);
-        $_POST['postcode'] =  Tools::safeOutput(Tools::substr($normalizedAddress['Normalized']['PostalCode'], 0, strpos($normalizedAddress['Normalized']['PostalCode'], '-')));
+        Tools::getValue('address1') = Tools::safeOutput($normalizedAddress['Normalized']['Line1']);
+        Tools::getValue('address2') = Tools::safeOutput($normalizedAddress['Normalized']['Line2']);
+        Tools::getValue('city') = Tools::safeOutput($normalizedAddress['Normalized']['City']);
+        Tools::getValue('postcode') =  Tools::safeOutput(Tools::substr($normalizedAddress['Normalized']['PostalCode'], 0, strpos($normalizedAddress['Normalized']['PostalCode'], '-')));
       }
       return $normalizedAddress;
     }
