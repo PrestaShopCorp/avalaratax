@@ -769,10 +769,10 @@ class AvalaraTax extends Module
   {
     if (Tools::isSubmit('submitAddproduct') || Tools::isSubmit('submitAddproductAndStay'))
       Db::getInstance()->Execute('REPLACE INTO `'._DB_PREFIX_.'avalara_taxcodes` (`id_product`, `tax_code`)
-        VALUES ('.(Tools::getIsset($_GET['id_product']) ? (int)$_GET['id_product'] : 0).', \''.pSQL(Tools::safeOutput(Tools::getValue('tax_code'))).'\')');
+        VALUES ('.(Tools::getIsset(Tools::getValue('id_product')) ? (int)Tools::getValue('id_product') : 0).', \''.pSQL(Tools::safeOutput(Tools::getValue('tax_code'))).'\')');
 
 
-    if ((Tools::getIsset($_GET['updateproduct']) || Tools::getIsset($_GET['addproduct'])) && Tools::getIsset($_GET['id_product']) && (int)$_GET['id_product'])
+    if ((Tools::getIsset(Tools::getValue('updateproduct')) || Tools::getIsset(Tools::getValue('addproduct'))) && Tools::getIsset(Tools::getValue('id_product')) && (int)Tools::getValue('id_product'))
     {
       $r = Db::getInstance()->getRow('
       SELECT `tax_code`
