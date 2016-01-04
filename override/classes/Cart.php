@@ -137,6 +137,7 @@ if (version_compare(_PS_VERSION_, '1.6.1', '>=')) {
                 } else {
                     $id_address = (int)$product['id_address_delivery'];
                 } // Get delivery address of the product from the cart
+
                 if (!$address_factory->addressExists($id_address)) {
                     $id_address = null;
                 }
@@ -299,19 +300,22 @@ if (version_compare(_PS_VERSION_, '1.6.1', '>=')) {
             }
 
             // Our new hook
-            $hook_array = Hook::exec('actionCartGetOrderTotal',
-              array(
-                'with_taxes' => $original_with_taxes,
-                'type' => $type,
-                'cart' => $this,
-                'order_total' => $order_total
-              ),
-              null, true);
+            $hook_array = Hook::exec(
+                'actionCartGetOrderTotal',
+                array(
+                    'with_taxes' => $original_with_taxes,
+                    'type' => $type,
+                    'cart' => $this,
+                    'order_total' => $order_total
+                ),
+                null,
+                true
+            );
 
             // Replace order_total with the value returned from the hook
-            if (is_array($hook_array)){
-              $hook_array = array_shift($hook_array);
-              $order_total = $hook_array['new_order_total'];
+            if (is_array($hook_array)) {
+                $hook_array = array_shift($hook_array);
+                $order_total = $hook_array['new_order_total'];
             }
 
             return Tools::ps_round((float)$order_total, $compute_precision);
@@ -382,10 +386,9 @@ if (version_compare(_PS_VERSION_, '1.6.1', '>=')) {
             if (!isset($id_zone)) {
                 // Get id zone
                 if (!$this->isMultiAddressDelivery()
-                    && isset($this->id_address_delivery) // Be carefull, id_address_delivery is not usefull one 1.5
-                    && $this->id_address_delivery
-                    && Customer::customerHasAddress($this->id_customer, $this->id_address_delivery
-                )) {
+                && isset($this->id_address_delivery) // Be carefull, id_address_delivery is not usefull one 1.5
+                && $this->id_address_delivery
+                && Customer::customerHasAddress($this->id_customer, $this->id_address_delivery)) {
                     $id_zone = Address::getZoneById((int)$this->id_address_delivery);
                 } else {
                     if (!Validate::isLoadedObject($default_country)) {
@@ -441,7 +444,7 @@ if (version_compare(_PS_VERSION_, '1.6.1', '>=')) {
                         $total_order = $total_package_without_shipping_tax_inc;
                         $check_delivery_price_by_price = Carrier::checkDeliveryPriceByPrice($row['id_carrier'], $total_order, (int)$id_zone, (int)$this->id_currency);
 
-  	                    // Get only carriers that have a range compatible with cart
+                        // Get only carriers that have a range compatible with cart
                         if (($shipping_method == Carrier::SHIPPING_METHOD_WEIGHT && !$check_delivery_price_by_weight)
                         || ($shipping_method == Carrier::SHIPPING_METHOD_PRICE && !$check_delivery_price_by_price)) {
                             unset($result[$k]);
@@ -624,17 +627,20 @@ if (version_compare(_PS_VERSION_, '1.6.1', '>=')) {
             }
 
             // New hook for allowing AvaTax to add tax to shipping costs
-            $hook_array = Hook::exec('actionCartGetPackageShippingCost',
-              array(
-                'with_taxes' => $use_tax,
-                'id_carrier' => $id_carrier,
-                'cart' => $this,
-                'shipping_cost' => $shipping_cost
+            $hook_array = Hook::exec(
+                'actionCartGetPackageShippingCost',
+                array(
+                    'with_taxes' => $use_tax,
+                    'id_carrier' => $id_carrier,
+                    'cart' => $this,
+                    'shipping_cost' => $shipping_cost
                 ),
-              null, true);
+                null,
+                true
+            );
 
             // Replace shipping_cost with value returned by hook
-            if (is_array($hook_array)){
+            if (is_array($hook_array)) {
                 $hook_array = array_shift($hook_array);
                 $shipping_cost = $hook_array['new_shipping_cost'];
             }
@@ -653,8 +659,9 @@ if (version_compare(_PS_VERSION_, '1.6.1', '>=')) {
             // Store the original, as this value is mutated before executing the hook that relies on it
             $original_with_taxes = $with_taxes;
 
-            if (!$this->id)
+            if (!$this->id) {
                 return 0;
+            }
 
             $type = (int)$type;
             $array_type = array(
@@ -672,72 +679,83 @@ if (version_compare(_PS_VERSION_, '1.6.1', '>=')) {
             $virtual_context = Context::getContext()->cloneContext();
             $virtual_context->cart = $this;
 
-            if (!in_array($type, $array_type))
+            if (!in_array($type, $array_type)) {
                 die(Tools::displayError());
+            }
 
             $with_shipping = in_array($type, array(Cart::BOTH, Cart::ONLY_SHIPPING));
 
             // if cart rules are not used
-            if ($type == Cart::ONLY_DISCOUNTS && !CartRule::isFeatureActive())
+            if ($type == Cart::ONLY_DISCOUNTS && !CartRule::isFeatureActive()) {
                 return 0;
+            }
 
             // no shipping cost if is a cart with only virtuals products
             $virtual = $this->isVirtualCart();
-            if ($virtual && $type == Cart::ONLY_SHIPPING)
+            if ($virtual && $type == Cart::ONLY_SHIPPING) {
                 return 0;
-
-            if ($virtual && $type == Cart::BOTH)
-                $type = Cart::BOTH_WITHOUT_SHIPPING;
-
-            if ($with_shipping)
-            {
-                if (is_null($products) && is_null($id_carrier))
-                    $shipping_fees = $this->getTotalShippingCost(null, (boolean)$with_taxes);
-                else
-                    $shipping_fees = $this->getPackageShippingCost($id_carrier, (int)$with_taxes, null, $products);
             }
-            else
+
+            if ($virtual && $type == Cart::BOTH) {
+                $type = Cart::BOTH_WITHOUT_SHIPPING;
+            }
+
+            if ($with_shipping) {
+                if (is_null($products) && is_null($id_carrier)) {
+                    $shipping_fees = $this->getTotalShippingCost(null, (boolean)$with_taxes);
+                } else {
+                    $shipping_fees = $this->getPackageShippingCost($id_carrier, (int)$with_taxes, null, $products);
+                }
+            } else {
                 $shipping_fees = 0;
+            }
 
-            if ($type == Cart::ONLY_SHIPPING)
+            if ($type == Cart::ONLY_SHIPPING) {
                 return $shipping_fees;
+            }
 
-            if ($type == Cart::ONLY_PRODUCTS_WITHOUT_SHIPPING)
+            if ($type == Cart::ONLY_PRODUCTS_WITHOUT_SHIPPING) {
                 $type = Cart::ONLY_PRODUCTS;
+            }
 
             $param_product = true;
-            if (is_null($products))
-            {
+            if (is_null($products)) {
                 $param_product = false;
                 $products = $this->getProducts();
             }
 
-            if ($type == Cart::ONLY_PHYSICAL_PRODUCTS_WITHOUT_SHIPPING)
-            {
-                foreach ($products as $key => $product)
-                    if ($product['is_virtual'])
+            if ($type == Cart::ONLY_PHYSICAL_PRODUCTS_WITHOUT_SHIPPING) {
+                foreach ($products as $key => $product) {
+                    if ($product['is_virtual']) {
                         unset($products[$key]);
+                    }
+                }
+
                 $type = Cart::ONLY_PRODUCTS;
             }
 
             $order_total = 0;
-            if (Tax::excludeTaxeOption())
+            if (Tax::excludeTaxeOption()) {
                 $with_taxes = false;
+            }
 
-            foreach ($products as $product) // products refer to the cart details
-            {
-                if ($virtual_context->shop->id != $product['id_shop'])
+            // products refer to the cart details
+            foreach ($products as $product) {
+                if ($virtual_context->shop->id != $product['id_shop']) {
                     $virtual_context->shop = new Shop((int)$product['id_shop']);
+                }
 
-                if (Configuration::get('PS_TAX_ADDRESS_TYPE') == 'id_address_invoice')
+                if (Configuration::get('PS_TAX_ADDRESS_TYPE') == 'id_address_invoice') {
                     $address_id = (int)$this->id_address_invoice;
-                else
+                } else {
                     $address_id = (int)$product['id_address_delivery']; // Get delivery address of the product from the cart
-                if (!Address::addressExists($address_id))
-                    $address_id = null;
+                }
 
-                if ($this->_taxCalculationMethod == PS_TAX_EXC)
-                {
+                if (!Address::addressExists($address_id)) {
+                    $address_id = null;
+                }
+
+                if ($this->_taxCalculationMethod == PS_TAX_EXC) {
                     // Here taxes are computed only once the quantity has been applied to the product price
                     $null = null; // The $null variable reference hack for getProductPrice()
                     $price = Product::getPriceStatic(
@@ -762,8 +780,7 @@ if (version_compare(_PS_VERSION_, '1.6.1', '>=')) {
                     $total_ecotax = $product['ecotax'] * (int)$product['cart_quantity'];
                     $total_price = $price * (int)$product['cart_quantity'];
 
-                    if ($with_taxes)
-                    {
+                    if ($with_taxes) {
                         $product_tax_rate = (float)Tax::getProductTaxRate((int)$product['id_product'], (int)$address_id, $virtual_context);
                         $product_eco_tax_rate = Tax::getProductEcotaxRate((int)$address_id);
 
@@ -771,10 +788,8 @@ if (version_compare(_PS_VERSION_, '1.6.1', '>=')) {
                         $total_ecotax = $total_ecotax * (1 + $product_eco_tax_rate / 100);
                         $total_price = Tools::ps_round($total_price + $total_ecotax, 2);
                     }
-                }
-                else
-                {
-                    if ($with_taxes)
+                } else {
+                    if ($with_taxes) {
                         $null = null; // The $null variable reference hack for getProductPrice()
                         $price = Product::getPriceStatic(
                             (int)$product['id_product'],
@@ -794,7 +809,7 @@ if (version_compare(_PS_VERSION_, '1.6.1', '>=')) {
                             true,
                             $virtual_context
                         );
-                    else
+                    } else {
                         $null = null; // The $null variable reference hack for getProductPrice()
                         $price = Product::getPriceStatic(
                             (int)$product['id_product'],
@@ -814,103 +829,127 @@ if (version_compare(_PS_VERSION_, '1.6.1', '>=')) {
                             true,
                             $virtual_context
                         );
+                    }
 
                     $total_price = Tools::ps_round($price * (int)$product['cart_quantity'], 2);
                 }
+
                 $order_total += $total_price;
             }
 
             $order_total_products = $order_total;
 
-            if ($type == Cart::ONLY_DISCOUNTS)
+            if ($type == Cart::ONLY_DISCOUNTS) {
                 $order_total = 0;
+            }
 
             // Wrapping Fees
             $wrapping_fees = 0;
-            if ($this->gift)
+            if ($this->gift) {
                 $wrapping_fees = Tools::convertPrice(Tools::ps_round($this->getGiftWrappingPrice($with_taxes), 2), Currency::getCurrencyInstance((int)$this->id_currency));
-            if ($type == Cart::ONLY_WRAPPING)
+            }
+
+            if ($type == Cart::ONLY_WRAPPING) {
                 return $wrapping_fees;
+            }
 
             $order_total_discount = 0;
-            if (!in_array($type, array(Cart::ONLY_SHIPPING, Cart::ONLY_PRODUCTS)) && CartRule::isFeatureActive())
-            {
+
+            if (!in_array($type, array(Cart::ONLY_SHIPPING, Cart::ONLY_PRODUCTS)) && CartRule::isFeatureActive()) {
                 // First, retrieve the cart rules associated to this "getOrderTotal"
-                if ($with_shipping || $type == Cart::ONLY_DISCOUNTS)
+                if ($with_shipping || $type == Cart::ONLY_DISCOUNTS) {
                     $cart_rules = $this->getCartRules(CartRule::FILTER_ACTION_ALL);
-                else
-                {
+                } else {
                     $cart_rules = $this->getCartRules(CartRule::FILTER_ACTION_REDUCTION);
                     // Cart Rules array are merged manually in order to avoid doubles
-                    foreach ($this->getCartRules(CartRule::FILTER_ACTION_GIFT) as $tmp_cart_rule)
-                    {
+                    foreach ($this->getCartRules(CartRule::FILTER_ACTION_GIFT) as $tmp_cart_rule) {
                         $flag = false;
-                        foreach ($cart_rules as $cart_rule)
-                            if ($tmp_cart_rule['id_cart_rule'] == $cart_rule['id_cart_rule'])
+
+                        foreach ($cart_rules as $cart_rule) {
+                            if ($tmp_cart_rule['id_cart_rule'] == $cart_rule['id_cart_rule']) {
                                 $flag = true;
-                        if (!$flag)
+                            }
+                        }
+
+                        if (!$flag) {
                             $cart_rules[] = $tmp_cart_rule;
+                        }
                     }
                 }
 
                 $id_address_delivery = 0;
-                if (isset($products[0]))
+
+                if (isset($products[0])) {
                     $id_address_delivery = (is_null($products) ? $this->id_address_delivery : $products[0]['id_address_delivery']);
+                }
+
                 $package = array('id_carrier' => $id_carrier, 'id_address' => $id_address_delivery, 'products' => $products);
 
                 // Then, calculate the contextual value for each one
-                foreach ($cart_rules as $cart_rule)
-                {
+                foreach ($cart_rules as $cart_rule) {
                     // If the cart rule offers free shipping, add the shipping cost
-                    if (($with_shipping || $type == Cart::ONLY_DISCOUNTS) && $cart_rule['obj']->free_shipping)
+                    if (($with_shipping || $type == Cart::ONLY_DISCOUNTS) && $cart_rule['obj']->free_shipping) {
                         $order_total_discount += Tools::ps_round($cart_rule['obj']->getContextualValue($with_taxes, $virtual_context, CartRule::FILTER_ACTION_SHIPPING, ($param_product ? $package : null), $use_cache), 2);
+                    }
 
                     // If the cart rule is a free gift, then add the free gift value only if the gift is in this package
-                    if ((int)$cart_rule['obj']->gift_product)
-                    {
+                    if ((int)$cart_rule['obj']->gift_product) {
                         $in_order = false;
-                        if (is_null($products))
-                            $in_order = true;
-                        else
-                            foreach ($products as $product)
-                                if ($cart_rule['obj']->gift_product == $product['id_product'] && $cart_rule['obj']->gift_product_attribute == $product['id_product_attribute'])
-                                    $in_order = true;
 
-                        if ($in_order)
+                        if (is_null($products)) {
+                            $in_order = true;
+                        } else {
+                            foreach ($products as $product) {
+                                if ($cart_rule['obj']->gift_product == $product['id_product'] && $cart_rule['obj']->gift_product_attribute == $product['id_product_attribute']) {
+                                    $in_order = true;
+                                }
+                            }
+                        }
+
+                        if ($in_order) {
                             $order_total_discount += $cart_rule['obj']->getContextualValue($with_taxes, $virtual_context, CartRule::FILTER_ACTION_GIFT, $package, $use_cache);
+                        }
                     }
 
                     // If the cart rule offers a reduction, the amount is prorated (with the products in the package)
-                    if ($cart_rule['obj']->reduction_percent > 0 || $cart_rule['obj']->reduction_amount > 0)
+                    if ($cart_rule['obj']->reduction_percent > 0 || $cart_rule['obj']->reduction_amount > 0) {
                         $order_total_discount += Tools::ps_round($cart_rule['obj']->getContextualValue($with_taxes, $virtual_context, CartRule::FILTER_ACTION_REDUCTION, $package, $use_cache), 2);
+                    }
                 }
+
                 $order_total_discount = min(Tools::ps_round($order_total_discount, 2), $wrapping_fees + $order_total_products + $shipping_fees);
                 $order_total -= $order_total_discount;
             }
 
-            if ($type == Cart::BOTH)
+            if ($type == Cart::BOTH) {
                 $order_total += $shipping_fees + $wrapping_fees;
+            }
 
-            if ($order_total < 0 && $type != Cart::ONLY_DISCOUNTS)
+            if ($order_total < 0 && $type != Cart::ONLY_DISCOUNTS) {
                 return 0;
+            }
 
-            if ($type == Cart::ONLY_DISCOUNTS)
+            if ($type == Cart::ONLY_DISCOUNTS) {
                 return $order_total_discount;
+            }
 
             // Our new hook
-            $hook_array = Hook::exec('actionCartGetOrderTotal',
+            $hook_array = Hook::exec(
+                'actionCartGetOrderTotal',
                 array(
                     'with_taxes' => $original_with_taxes,
                     'type' => $type,
                     'cart' => $this,
                     'order_total' => $order_total
                 ),
-                null, true);
+                null,
+                true
+            );
 
             // Replace order_total with the value returned from the hook
-            if (is_array($hook_array)){
-                    $hook_array = array_shift($hook_array);
-                    $order_total = $hook_array['new_order_total'];
+            if (is_array($hook_array)) {
+                $hook_array = array_shift($hook_array);
+                $order_total = $hook_array['new_order_total'];
             }
 
             return Tools::ps_round((float)$order_total, 2);
@@ -918,37 +957,46 @@ if (version_compare(_PS_VERSION_, '1.6.1', '>=')) {
 
         public function getPackageShippingCost($id_carrier = null, $use_tax = true, Country $default_country = null, $product_list = null, $id_zone = null)
         {
-            if ($this->isVirtualCart())
+            if ($this->isVirtualCart()) {
                 return 0;
+            }
 
-            if (!$default_country)
+            if (!$default_country) {
                 $default_country = Context::getContext()->country;
+            }
 
             $complete_product_list = $this->getProducts();
-            if (is_null($product_list))
-                $products = $complete_product_list;
-            else
-                $products = $product_list;
 
-            if (Configuration::get('PS_TAX_ADDRESS_TYPE') == 'id_address_invoice')
+            if (is_null($product_list)) {
+                $products = $complete_product_list;
+            } else {
+                $products = $product_list;
+            }
+
+            if (Configuration::get('PS_TAX_ADDRESS_TYPE') == 'id_address_invoice') {
                 $address_id = (int)$this->id_address_invoice;
-            elseif (count($product_list))
-            {
+            } elseif (count($product_list)) {
                 $prod = current($product_list);
                 $address_id = (int)$prod['id_address_delivery'];
+            } else {
+                $address_id = null;
             }
-            else
+
+            if (!Address::addressExists($address_id)) {
                 $address_id = null;
-            if (!Address::addressExists($address_id))
-                $address_id = null;
+            }
 
             $cache_id = 'getPackageShippingCost_'.(int)$this->id.'_'.(int)$address_id.'_'.(int)$id_carrier.'_'.(int)$use_tax.'_'.(int)$default_country->id;
-            if ($products)
-                foreach ($products as $product)
-                    $cache_id .= '_'.(int)$product['id_product'].'_'.(int)$product['id_product_attribute'];
 
-            if (Cache::isStored($cache_id))
+            if ($products) {
+                foreach ($products as $product) {
+                    $cache_id .= '_'.(int)$product['id_product'].'_'.(int)$product['id_product_attribute'];
+                }
+            }
+
+            if (Cache::isStored($cache_id)) {
                 return Cache::retrieve($cache_id);
+            }
 
             // Order total in default currency without fees
             $order_total = $this->getOrderTotal(true, Cart::ONLY_PHYSICAL_PRODUCTS_WITHOUT_SHIPPING, $product_list);
@@ -956,69 +1004,66 @@ if (version_compare(_PS_VERSION_, '1.6.1', '>=')) {
             // Start with shipping cost at 0
             $shipping_cost = 0;
             // If no product added, return 0
-            if (!count($products))
-            {
+            if (!count($products)) {
                 Cache::store($cache_id, $shipping_cost);
                 return $shipping_cost;
             }
 
-            if(!isset($id_zone))
-            {
+            if (!isset($id_zone)) {
                 // Get id zone
                 if (!$this->isMultiAddressDelivery()
-                    && isset($this->id_address_delivery) // Be carefull, id_address_delivery is not usefull one 1.5
-                    && $this->id_address_delivery
-                    && Customer::customerHasAddress($this->id_customer, $this->id_address_delivery
-                ))
+                && isset($this->id_address_delivery) // Be carefull, id_address_delivery is not usefull one 1.5
+                && $this->id_address_delivery
+                && Customer::customerHasAddress($this->id_customer, $this->id_address_delivery)) {
                     $id_zone = Address::getZoneById((int)$this->id_address_delivery);
-                else
-                {
-                    if (!Validate::isLoadedObject($default_country))
+                } else {
+                    if (!Validate::isLoadedObject($default_country)) {
                         $default_country = new Country(Configuration::get('PS_COUNTRY_DEFAULT'), Configuration::get('PS_LANG_DEFAULT'));
+                    }
 
                     $id_zone = (int)$default_country->id_zone;
                 }
             }
 
-            if ($id_carrier && !$this->isCarrierInRange((int)$id_carrier, (int)$id_zone))
+            if ($id_carrier && !$this->isCarrierInRange((int)$id_carrier, (int)$id_zone)) {
                 $id_carrier = '';
+            }
 
-            if (empty($id_carrier) && $this->isCarrierInRange((int)Configuration::get('PS_CARRIER_DEFAULT'), (int)$id_zone))
+            if (empty($id_carrier) && $this->isCarrierInRange((int)Configuration::get('PS_CARRIER_DEFAULT'), (int)$id_zone)) {
                 $id_carrier = (int)Configuration::get('PS_CARRIER_DEFAULT');
+            }
 
             $total_package_without_shipping_tax_inc = $this->getOrderTotal(true, Cart::BOTH_WITHOUT_SHIPPING, $product_list);
-            if (empty($id_carrier))
-            {
-                if ((int)$this->id_customer)
-                {
+
+            if (empty($id_carrier)) {
+                if ((int)$this->id_customer) {
                     $customer = new Customer((int)$this->id_customer);
                     $result = Carrier::getCarriers((int)Configuration::get('PS_LANG_DEFAULT'), true, false, (int)$id_zone, $customer->getGroups());
                     unset($customer);
-                }
-                else
+                } else {
                     $result = Carrier::getCarriers((int)Configuration::get('PS_LANG_DEFAULT'), true, false, (int)$id_zone);
+                }
 
-                foreach ($result as $k => $row)
-                {
-                    if ($row['id_carrier'] == Configuration::get('PS_CARRIER_DEFAULT'))
+                foreach ($result as $k => $row) {
+                    if ($row['id_carrier'] == Configuration::get('PS_CARRIER_DEFAULT')) {
                         continue;
+                    }
 
-                    if (!isset(self::$_carriers[$row['id_carrier']]))
+                    if (!isset(self::$_carriers[$row['id_carrier']])) {
                         self::$_carriers[$row['id_carrier']] = new Carrier((int)$row['id_carrier']);
+                    }
 
                     $carrier = self::$_carriers[$row['id_carrier']];
 
                     // Get only carriers that are compliant with shipping method
                     if (($carrier->getShippingMethod() == Carrier::SHIPPING_METHOD_WEIGHT && $carrier->getMaxDeliveryPriceByWeight((int)$id_zone) === false)
-                    || ($carrier->getShippingMethod() == Carrier::SHIPPING_METHOD_PRICE && $carrier->getMaxDeliveryPriceByPrice((int)$id_zone) === false))
-                    {
+                    || ($carrier->getShippingMethod() == Carrier::SHIPPING_METHOD_PRICE && $carrier->getMaxDeliveryPriceByPrice((int)$id_zone) === false)) {
                         unset($result[$k]);
                         continue;
                     }
 
                     // If out-of-range behavior carrier is set on "Desactivate carrier"
-                    if ($row['range_behavior'])
-                    {
+                    if ($row['range_behavior']) {
                         $check_delivery_price_by_weight = Carrier::checkDeliveryPriceByWeight($row['id_carrier'], $this->getTotalWeight(), (int)$id_zone);
 
                         $total_order = $total_package_without_shipping_tax_inc;
@@ -1026,185 +1071,190 @@ if (version_compare(_PS_VERSION_, '1.6.1', '>=')) {
 
                         // Get only carriers that have a range compatible with cart
                         if (($carrier->getShippingMethod() == Carrier::SHIPPING_METHOD_WEIGHT && !$check_delivery_price_by_weight)
-                        || ($carrier->getShippingMethod() == Carrier::SHIPPING_METHOD_PRICE && !$check_delivery_price_by_price))
-                        {
+                        || ($carrier->getShippingMethod() == Carrier::SHIPPING_METHOD_PRICE && !$check_delivery_price_by_price)) {
                             unset($result[$k]);
                             continue;
                         }
                     }
 
-                    if ($carrier->getShippingMethod() == Carrier::SHIPPING_METHOD_WEIGHT)
+                    if ($carrier->getShippingMethod() == Carrier::SHIPPING_METHOD_WEIGHT) {
                         $shipping = $carrier->getDeliveryPriceByWeight($this->getTotalWeight($product_list), (int)$id_zone);
-                    else
+                    } else {
                         $shipping = $carrier->getDeliveryPriceByPrice($order_total, (int)$id_zone, (int)$this->id_currency);
+                    }
 
-                    if (!isset($min_shipping_price))
+                    if (!isset($min_shipping_price)) {
                         $min_shipping_price = $shipping;
+                    }
 
-                    if ($shipping <= $min_shipping_price)
-                    {
+                    if ($shipping <= $min_shipping_price) {
                         $id_carrier = (int)$row['id_carrier'];
                         $min_shipping_price = $shipping;
                     }
                 }
             }
 
-            if (empty($id_carrier))
+            if (empty($id_carrier)) {
                 $id_carrier = Configuration::get('PS_CARRIER_DEFAULT');
+            }
 
-            if (!isset(self::$_carriers[$id_carrier]))
+            if (!isset(self::$_carriers[$id_carrier])) {
                 self::$_carriers[$id_carrier] = new Carrier((int)$id_carrier, Configuration::get('PS_LANG_DEFAULT'));
+            }
 
             $carrier = self::$_carriers[$id_carrier];
 
             // No valid Carrier or $id_carrier <= 0 ?
-            if (!Validate::isLoadedObject($carrier))
-            {
+            if (!Validate::isLoadedObject($carrier)) {
                 Cache::store($cache_id, 0);
                 return 0;
             }
 
-            if (!$carrier->active)
-            {
+            if (!$carrier->active) {
                 Cache::store($cache_id, $shipping_cost);
                 return $shipping_cost;
             }
 
             // Free fees if free carrier
-            if ($carrier->is_free == 1)
-            {
+            if ($carrier->is_free == 1) {
                 Cache::store($cache_id, 0);
                 return 0;
             }
 
             // Select carrier tax
-            if ($use_tax && !Tax::excludeTaxeOption())
-            {
+            if ($use_tax && !Tax::excludeTaxeOption()) {
                 $address = Address::initialize((int)$address_id);
                 $carrier_tax = $carrier->getTaxesRate($address);
             }
 
-            $configuration = Configuration::getMultiple(array(
-                'PS_SHIPPING_FREE_PRICE',
-                'PS_SHIPPING_HANDLING',
-                'PS_SHIPPING_METHOD',
-                'PS_SHIPPING_FREE_WEIGHT'
-            ));
+            $configuration = Configuration::getMultiple(
+                array(
+                    'PS_SHIPPING_FREE_PRICE',
+                    'PS_SHIPPING_HANDLING',
+                    'PS_SHIPPING_METHOD',
+                    'PS_SHIPPING_FREE_WEIGHT'
+                )
+            );
 
             // Free fees
             $free_fees_price = 0;
-            if (isset($configuration['PS_SHIPPING_FREE_PRICE']))
+            if (isset($configuration['PS_SHIPPING_FREE_PRICE'])) {
                 $free_fees_price = Tools::convertPrice((float)$configuration['PS_SHIPPING_FREE_PRICE'], Currency::getCurrencyInstance((int)$this->id_currency));
+            }
+
             $orderTotalwithDiscounts = $this->getOrderTotal(true, Cart::BOTH_WITHOUT_SHIPPING, null, null, false);
-            if ($orderTotalwithDiscounts >= (float)($free_fees_price) && (float)($free_fees_price) > 0)
-            {
+
+            if ($orderTotalwithDiscounts >= (float)($free_fees_price) && (float)($free_fees_price) > 0) {
                 Cache::store($cache_id, $shipping_cost);
                 return $shipping_cost;
             }
 
             if (isset($configuration['PS_SHIPPING_FREE_WEIGHT'])
-                && $this->getTotalWeight() >= (float)$configuration['PS_SHIPPING_FREE_WEIGHT']
-                && (float)$configuration['PS_SHIPPING_FREE_WEIGHT'] > 0)
-            {
+            && $this->getTotalWeight() >= (float)$configuration['PS_SHIPPING_FREE_WEIGHT']
+            && (float)$configuration['PS_SHIPPING_FREE_WEIGHT'] > 0) {
                 Cache::store($cache_id, $shipping_cost);
                 return $shipping_cost;
             }
 
             // Get shipping cost using correct method
-            if ($carrier->range_behavior)
-            {
-                if(!isset($id_zone))
-                {
+            if ($carrier->range_behavior) {
+                if (!isset($id_zone)) {
                     // Get id zone
                     if (isset($this->id_address_delivery)
-                        && $this->id_address_delivery
-                        && Customer::customerHasAddress($this->id_customer, $this->id_address_delivery))
+                    && $this->id_address_delivery
+                    && Customer::customerHasAddress($this->id_customer, $this->id_address_delivery)) {
                         $id_zone = Address::getZoneById((int)$this->id_address_delivery);
-                    else
+                    } else {
                         $id_zone = (int)$default_country->id_zone;
+                    }
                 }
 
                 if (($carrier->getShippingMethod() == Carrier::SHIPPING_METHOD_WEIGHT && !Carrier::checkDeliveryPriceByWeight($carrier->id, $this->getTotalWeight(), (int)$id_zone))
                 || ($carrier->getShippingMethod() == Carrier::SHIPPING_METHOD_PRICE && !Carrier::checkDeliveryPriceByPrice($carrier->id, $total_package_without_shipping_tax_inc, $id_zone, (int)$this->id_currency)
-                ))
+                )) {
                     $shipping_cost += 0;
-                else
-                {
-                    if ($carrier->getShippingMethod() == Carrier::SHIPPING_METHOD_WEIGHT)
+                } else {
+                    if ($carrier->getShippingMethod() == Carrier::SHIPPING_METHOD_WEIGHT) {
                         $shipping_cost += $carrier->getDeliveryPriceByWeight($this->getTotalWeight($product_list), $id_zone);
-                    else // by price
+                    } else {
+                        // by price
                         $shipping_cost += $carrier->getDeliveryPriceByPrice($order_total, $id_zone, (int)$this->id_currency);
+                    }
                 }
-            }
-            else
-            {
-                if ($carrier->getShippingMethod() == Carrier::SHIPPING_METHOD_WEIGHT)
+            } else {
+                if ($carrier->getShippingMethod() == Carrier::SHIPPING_METHOD_WEIGHT) {
                     $shipping_cost += $carrier->getDeliveryPriceByWeight($this->getTotalWeight($product_list), $id_zone);
-                else
+                } else {
                     $shipping_cost += $carrier->getDeliveryPriceByPrice($order_total, $id_zone, (int)$this->id_currency);
+                }
 
             }
             // Adding handling charges
-            if (isset($configuration['PS_SHIPPING_HANDLING']) && $carrier->shipping_handling)
+            if (isset($configuration['PS_SHIPPING_HANDLING']) && $carrier->shipping_handling) {
                 $shipping_cost += (float)$configuration['PS_SHIPPING_HANDLING'];
+            }
 
             // Additional Shipping Cost per product
-            foreach ($products as $product)
-                if (!$product['is_virtual'])
+            foreach ($products as $product) {
+                if (!$product['is_virtual']) {
                     $shipping_cost += $product['additional_shipping_cost'] * $product['cart_quantity'];
+                }
+            }
 
             $shipping_cost = Tools::convertPrice($shipping_cost, Currency::getCurrencyInstance((int)$this->id_currency));
 
             //get external shipping cost from module
-            if ($carrier->shipping_external)
-            {
+            if ($carrier->shipping_external) {
                 $module_name = $carrier->external_module_name;
                 $module = Module::getInstanceByName($module_name);
 
-                if (Validate::isLoadedObject($module))
-                {
-                    if (array_key_exists('id_carrier', $module))
+                if (Validate::isLoadedObject($module)) {
+                    if (array_key_exists('id_carrier', $module)) {
                         $module->id_carrier = $carrier->id;
-                    if ($carrier->need_range)
-                        if (method_exists($module, 'getPackageShippingCost'))
+                    }
+                    if ($carrier->need_range) {
+                        if (method_exists($module, 'getPackageShippingCost')) {
                             $shipping_cost = $module->getPackageShippingCost($this, $shipping_cost, $products);
-                        else
+                        } else {
                             $shipping_cost = $module->getOrderShippingCost($this, $shipping_cost);
-                    else
+                        }
+                    } else {
                         $shipping_cost = $module->getOrderShippingCostExternal($this);
+                    }
 
                     // Check if carrier is available
-                    if ($shipping_cost === false)
-                    {
+                    if ($shipping_cost === false) {
                         Cache::store($cache_id, false);
                         return false;
                     }
-                }
-                else
-                {
+                } else {
                     Cache::store($cache_id, false);
                     return false;
                 }
             }
 
             // Apply tax
-            if ($use_tax && isset($carrier_tax))
+            if ($use_tax && isset($carrier_tax)) {
                 $shipping_cost *= 1 + ($carrier_tax / 100);
+            }
 
             // New hook for allowing AvaTax to add tax to shipping costs
-            $hook_array = Hook::exec('actionCartGetPackageShippingCost',
+            $hook_array = Hook::exec(
+                'actionCartGetPackageShippingCost',
                 array(
                     'with_taxes' => $use_tax,
                     'id_carrier' => $id_carrier,
                     'cart' => $this,
                     'shipping_cost' => $shipping_cost
                 ),
-                null, true);
+                null,
+                true
+            );
 
             // Replace shipping_cost with value returned from the hook
-            if (is_array($hook_array)){
-                    $hook_array = array_shift($hook_array);
-                    $shipping_cost = $hook_array['new_shipping_cost'];
+            if (is_array($hook_array)) {
+                $hook_array = array_shift($hook_array);
+                $shipping_cost = $hook_array['new_shipping_cost'];
             }
 
             $shipping_cost = (float)Tools::ps_round((float)$shipping_cost, 2);
@@ -1214,7 +1264,5 @@ if (version_compare(_PS_VERSION_, '1.6.1', '>=')) {
         }
     }
 } else {
-	// We don't have applicable overrides for these versions yet
+    // We don't have applicable overrides for these versions yet
 }
-
-

@@ -28,8 +28,7 @@ class AuthController extends AuthControllerCore
 {
     public function preProcess()
     {
-        if (Tools::isSubmit('submitAccount') || Tools::isSubmit('submitGuestAccount'))
-        {
+        if (Tools::isSubmit('submitAccount') || Tools::isSubmit('submitGuestAccount')) {
             include_once(dirname(__FILE__).'/../../modules/avalaratax/avalaratax.php');
             $avalaraModule = new AvalaraTax();
             $avalaraModule->fixPOST();

@@ -39,29 +39,37 @@ class Tax extends TaxCore
 
         /* Instanciate the Avalara module and check if active */
         $avalara = new AvalaraTax();
-        if (!$avalara->active)
+
+        if (!$avalara->active) {
             return parent::getProductTaxRate($id_product, $id_address, $getCarrierRate);
+        }
 
         /* With Avalara, we disable the tax for non logged users */
-        if (!(int)$id_address)
+        if (!(int)$id_address) {
             return 0.;
+        }
 
-        $region = Db::getInstance()->getValue('SELECT s.`iso_code`
-                                    FROM '._DB_PREFIX_.'address a
-                                    LEFT JOIN '._DB_PREFIX_.'state s ON (s.`id_state` = a.`id_state`)
-                                    WHERE a.`id_address` = '.(int)$id_address);
+        $region = Db::getInstance()->getValue(
+            'SELECT s.`iso_code`
+            FROM '._DB_PREFIX_.'address a
+            LEFT JOIN '._DB_PREFIX_.'state s ON (s.`id_state` = a.`id_state`)
+            WHERE a.`id_address` = '.(int)$id_address
+        );
 
         /* If the Merchant does not want to calculate taxes outside his state and we are outside the state, we return 0 */
-        if ((!empty($region) && $region != Configuration::get('AVALARATAX_STATE') && !Configuration::get('AVALARATAX_TAX_OUTSIDE')))
+        if ((!empty($region) && $region != Configuration::get('AVALARATAX_STATE') && !Configuration::get('AVALARATAX_TAX_OUTSIDE'))) {
             return 0.;
+        }
 
-        return (float)Db::getInstance()->getValue('SELECT ac.`tax_rate`
-        FROM '._DB_PREFIX_.'avalara_'.($getCarrierRate ? 'carrier' : 'product').'_cache ac
-        WHERE ac.`id_'.($getCarrierRate ? 'carrier' : 'product').'` = '.(int)$id_product.'
-        AND ac.`region` = \''.pSQL($region).'\'');
+        return (float)Db::getInstance()->getValue(
+            'SELECT ac.`tax_rate`
+            FROM '._DB_PREFIX_.'avalara_'.($getCarrierRate ? 'carrier' : 'product').'_cache ac
+            WHERE ac.`id_'.($getCarrierRate ? 'carrier' : 'product').'` = '.(int)$id_product.'
+            AND ac.`region` = \''.pSQL($region).'\''
+        );
     }
 
-    public static function getCarrierTaxRate($id_carrier, $id_address = NULL)
+    public static function getCarrierTaxRate($id_carrier, $id_address = null)
     {
         return (float)self::getProductTaxRate($id_carrier, $id_address, true);
     }
