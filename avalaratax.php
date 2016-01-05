@@ -1864,7 +1864,7 @@ else
     {
         $commitResult = $this->tax('history', array('DocCode' => $params['id_order']));
         $hasRefund = Db::getInstance()->ExecuteS('SELECT COUNT(`id_order`) as qtyProductRefunded
-                                                FROM `'._DB_PREFIX_.'ps_order_detail`
+                                                FROM `'._DB_PREFIX_.'order_detail`
                                                 WHERE `id_order` = '.(int)$params['id_order'].'
                                                 AND (`product_quantity_refunded` IS NOT NULL AND `product_quantity_refunded` > 0)');
 
