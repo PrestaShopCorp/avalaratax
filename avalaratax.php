@@ -376,13 +376,12 @@ class AvalaraTax extends Module
                 // Get details for cancelledIdsOrderDetail (Grab the info to post to Avalara in English.)
                 $cancelledProdIdsDetails = Db::getInstance()->ExecuteS('SELECT od.`product_id` as id_product, od.`id_order_detail`, pl.`name`,
                                                                         pl.`description_short`, od.`product_price` as price, od.`reduction_percent`,
-                                                                        od.`reduction_amount`, od.`product_quantity` as quantity, atc.`tax_code`
+                                                                        od.`reduction_amount`, od.`product_quantity` as quantity
                                                                         FROM '._DB_PREFIX_.'order_detail od
                                                                         LEFT JOIN '._DB_PREFIX_.'product p ON (p.id_product = od.product_id)
                                                                         LEFT JOIN '._DB_PREFIX_.'product_lang pl ON (pl.id_product = p.id_product)
-                                                                        LEFT JOIN '._DB_PREFIX_.'avalara_taxcodes atc ON (atc.id_product = p.id_product)
                                                                         WHERE pl.`id_lang` = '.(int)Configuration::get('PS_LANG_DEFAULT').' AND od.`id_order` = '.(int)$_POST['id_order'].'
-                                                                        AND od.`id_order_detail` IN ('.pSQL($cancelledIdsOrderDetail).')'); // TODO: atc.tax_code and join on taxcodes may no longer be useful
+                                                                        AND od.`id_order_detail` IN ('.pSQL($cancelledIdsOrderDetail).')');
 
                 // Build the product list
                 $products = array();
@@ -742,13 +741,12 @@ class AvalaraTax extends Module
                 // Get details for cancelledIdsOrderDetail (Grab the info to post to Avalara in English.)
                 $cancelledProdIdsDetails = Db::getInstance()->ExecuteS('SELECT od.`product_id` as id_product, od.`id_order_detail`, pl.`name`,
                                                                         pl.`description_short`, od.`product_price` as price, od.`reduction_percent`,
-                                                                        od.`reduction_amount`, od.`product_quantity` as quantity, atc.`tax_code`
+                                                                        od.`reduction_amount`, od.`product_quantity` as quantity
                                                                         FROM '._DB_PREFIX_.'order_detail od
                                                                         LEFT JOIN '._DB_PREFIX_.'product p ON (p.id_product = od.product_id)
                                                                         LEFT JOIN '._DB_PREFIX_.'product_lang pl ON (pl.id_product = p.id_product)
-                                                                        LEFT JOIN '._DB_PREFIX_.'avalara_taxcodes atc ON (atc.id_product = p.id_product)
                                                                         WHERE pl.`id_lang` = '.(int)Configuration::get('PS_LANG_DEFAULT').' AND od.`id_order` = '.(int)$_POST['id_order'].'
-                                                                        AND od.`id_order_detail` IN ('.pSQL($cancelledIdsOrderDetail).')'); // TODO: atc.tax_code and join on taxcodes may no longer be useful
+                                                                        AND od.`id_order_detail` IN ('.pSQL($cancelledIdsOrderDetail).')');
                 // Build the product list
                 $products = array();
                 foreach ($cancelledProdIdsDetails as $cancelProd) {
@@ -1855,12 +1853,11 @@ else
         $order = new Order((isset($_POST['id_order']) ? (int)$_POST['id_order'] : (int)$params['id_order']));
         $allProducts = Db::getInstance()->ExecuteS('SELECT p.`id_product`, pl.`name`, pl.`description_short`,
                                                     od.`product_price` as price, od.`reduction_percent`,
-                                                    od.`reduction_amount`, od.`product_quantity` as quantity, atc.`tax_code`
+                                                    od.`reduction_amount`, od.`product_quantity` as quantity
                                                     FROM `'._DB_PREFIX_.'order_detail` od
                                                     LEFT JOIN `'._DB_PREFIX_.'product` p ON (p.id_product = od.product_id)
                                                     LEFT JOIN `'._DB_PREFIX_.'product_lang` pl ON (pl.id_product = p.id_product)
-                                                    LEFT JOIN `'._DB_PREFIX_.'avalara_taxcodes` atc ON (atc.id_product = p.id_product)
-                                                    WHERE pl.`id_lang` = '.(int)Configuration::get('PS_LANG_DEFAULT').' AND od.`id_order` = '.(isset($_POST['id_order']) ? (int)$_POST['id_order'] : (int)$params['id_order'])); // TODO: atc.tax_code and join on taxcodes may no longer be useful
+                                                    WHERE pl.`id_lang` = '.(int)Configuration::get('PS_LANG_DEFAULT').' AND od.`id_order` = '.(isset($_POST['id_order']) ? (int)$_POST['id_order'] : (int)$params['id_order']));
 
         $products = array();
         foreach ($allProducts as $v) {
