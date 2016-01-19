@@ -1268,7 +1268,7 @@ else
                         <input type="text" name="avalara_cache_max_limit" value="'.(isset($confValues['AVALARA_CACHE_MAX_LIMIT']) ? (int)Tools::safeOutput($confValues['AVALARA_CACHE_MAX_LIMIT']) : '').'" style="width: 40px;" /> '.$this->l('seconds').'
                     </div>
                     <div class="margin-form">
-                        <input type="submit" class="button avalaratax_button" name="SubmitAvalaraTaxOptions" value="'.$this->l('Save Settings').'" />
+                        <input type="submit" class="button avalaratax_button" name="SubmitAvalaraTaxOptions" value="'.$this->l('Save Options').'" />
                         <input type="submit" class="button avalaratax_button" name="SubmitAvalaraTaxClearCache" value="'.$this->l('Clear Cache').'" style="display: none;"/>
                     </div>
                     <div class="sep"></div>
@@ -1351,7 +1351,7 @@ else
         $buffer .= '</select>
                 </div>
                 <div class="margin-form">
-                    <input type="submit" class="button" name="SubmitAvalaraAddressOptions" value="'.$this->l('Save Settings').'" />
+                    <input type="submit" class="button" name="SubmitAvalaraAddressOptions" value="'.$this->l('Save Address').'" />
                 </div>
             </fieldset>
         </form>
