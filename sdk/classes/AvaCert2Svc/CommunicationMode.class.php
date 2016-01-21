@@ -8,31 +8,31 @@
  * @see CertificateRequestInitiateRequest
  *
  * @author    Avalara
- * @copyright © 2004 - 2011 Avalara, Inc.  All rights reserved.
+ * @copyright Â© 2004 - 2011 Avalara, Inc.  All rights reserved.
  * @package   AvaCert2
  */
 class CommunicationMode {
 
 /**
- * The value has not been set. 
+ * The value has not been set.
  */
   public static $NULL = 'NULL';
 
 /**
- * Email address 
+ * Email address
  */
   public static $EMAIL = 'EMAIL';
 
 /**
- * Mail address 
+ * Mail address
  */
   public static $MAIL = 'MAIL';
 
 /**
- * Fax number 
+ * Fax number
  */
   public static $FAX = 'FAX';
-  
+
 	public static function Values()
 	{
 		return array(
@@ -40,7 +40,7 @@ class CommunicationMode {
 			CommunicationMode::$EMAIL,
 			CommunicationMode::$MAIL,
 			CommunicationMode::$FAX
-					
+
 		);
 	}
 
