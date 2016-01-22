@@ -156,7 +156,12 @@ class AvalaraTax extends Module
         `total_shipping_tax` float(8,2) unsigned NOT NULL,
         PRIMARY KEY (`cart_hash`),
         KEY `cart_hash` (`cart_hash`),
-        KEY `cart_id` (`cart_id`))')) {
+        KEY `cart_id` (`cart_id`))') ||
+            !Db::getInstance()->Execute('
+        CREATE TABLE IF NOT EXISTS `'._DB_PREFIX_.'avalara_customer_entity_use_codes` (
+        `customer_id` int(10) unsigned NOT NULL,
+        `entity_use_code` varchar(10) NOT NULL,
+        PRIMARY KEY (`customer_id`))')) {
             return false;
         }
 
@@ -371,13 +376,13 @@ class AvalaraTax extends Module
                 // Get details for cancelledIdsOrderDetail (Grab the info to post to Avalara in English.)
                 $cancelledProdIdsDetails = Db::getInstance()->ExecuteS('SELECT od.`product_id` as id_product, od.`id_order_detail`, pl.`name`,
                                                                         pl.`description_short`, od.`product_price` as price, od.`reduction_percent`,
-                                                                        od.`reduction_amount`, od.`product_quantity` as quantity, atc.`tax_code`
+                                                                        od.`reduction_amount`, od.`product_quantity` as quantity
                                                                         FROM '._DB_PREFIX_.'order_detail od
                                                                         LEFT JOIN '._DB_PREFIX_.'product p ON (p.id_product = od.product_id)
                                                                         LEFT JOIN '._DB_PREFIX_.'product_lang pl ON (pl.id_product = p.id_product)
-                                                                        LEFT JOIN '._DB_PREFIX_.'avalara_taxcodes atc ON (atc.id_product = p.id_product)
                                                                         WHERE pl.`id_lang` = '.(int)Configuration::get('PS_LANG_DEFAULT').' AND od.`id_order` = '.(int)$_POST['id_order'].'
                                                                         AND od.`id_order_detail` IN ('.pSQL($cancelledIdsOrderDetail).')');
+
                 // Build the product list
                 $products = array();
                 foreach ($cancelledProdIdsDetails as $cancelProd) {
@@ -386,7 +391,7 @@ class AvalaraTax extends Module
                                         'total' => pSQL($_POST['cancelQuantity'][$cancelProd['id_order_detail']] * ($cancelProd['price'] - ($cancelProd['price'] * ($cancelProd['reduction_percent'] / 100)) - $cancelProd['reduction_amount'])), // Including those product with discounts
                                         'name' => pSQL(Tools::safeOutput($cancelProd['name'])),
                                         'description_short' => pSQL(Tools::safeOutput($cancelProd['description_short']), true),
-                                        'tax_code' => pSQL(Tools::safeOutput($cancelProd['tax_code'])));
+                                        'tax_code' => $this->getProductTaxCode($cancelProd['id_product']));
                 }
 
                 // Send to Avalara
@@ -736,11 +741,10 @@ class AvalaraTax extends Module
                 // Get details for cancelledIdsOrderDetail (Grab the info to post to Avalara in English.)
                 $cancelledProdIdsDetails = Db::getInstance()->ExecuteS('SELECT od.`product_id` as id_product, od.`id_order_detail`, pl.`name`,
                                                                         pl.`description_short`, od.`product_price` as price, od.`reduction_percent`,
-                                                                        od.`reduction_amount`, od.`product_quantity` as quantity, atc.`tax_code`
+                                                                        od.`reduction_amount`, od.`product_quantity` as quantity
                                                                         FROM '._DB_PREFIX_.'order_detail od
                                                                         LEFT JOIN '._DB_PREFIX_.'product p ON (p.id_product = od.product_id)
                                                                         LEFT JOIN '._DB_PREFIX_.'product_lang pl ON (pl.id_product = p.id_product)
-                                                                        LEFT JOIN '._DB_PREFIX_.'avalara_taxcodes atc ON (atc.id_product = p.id_product)
                                                                         WHERE pl.`id_lang` = '.(int)Configuration::get('PS_LANG_DEFAULT').' AND od.`id_order` = '.(int)$_POST['id_order'].'
                                                                         AND od.`id_order_detail` IN ('.pSQL($cancelledIdsOrderDetail).')');
                 // Build the product list
@@ -751,7 +755,7 @@ class AvalaraTax extends Module
                                         'total' => pSQL($_POST['cancelQuantity'][$cancelProd['id_order_detail']] * ($cancelProd['price'] - ($cancelProd['price'] * ($cancelProd['reduction_percent'] / 100)) - $cancelProd['reduction_amount'])), // Including those product with discounts
                                         'name' => pSQL(Tools::safeOutput($cancelProd['name'])),
                                         'description_short' => pSQL(Tools::safeOutput($cancelProd['description_short']), true),
-                                        'tax_code' => pSQL(Tools::safeOutput($cancelProd['tax_code'])));
+                                        'tax_code' => $this->getProductTaxCode($cancelProd['id_product']));
                 }
 
                 // Send to Avalara
@@ -820,10 +824,16 @@ class AvalaraTax extends Module
     public function hookBackOfficeTop()
     {
         if (Tools::isSubmit('submitAddproduct') || Tools::isSubmit('submitAddproductAndStay')) {
-            Db::getInstance()->Execute('REPLACE INTO `'._DB_PREFIX_.'avalara_taxcodes` (`id_product`, `tax_code`)
-                VALUES ('.(isset($_GET['id_product']) ? (int)$_GET['id_product'] : 0).', \''.pSQL(Tools::safeOutput($_POST['tax_code'])).'\')');
+            // Update the value of tax_code when a product page is saved
+            // isset and $_POST are necessary here because Tools::getIsset() and Tools::getValue() make extra !empty() checks
+            if (isset($_POST['tax_code'])) {
+                Db::getInstance()->Execute('REPLACE INTO `'._DB_PREFIX_.'avalara_taxcodes` (`id_product`, `tax_code`)
+                    VALUES ('.(isset($_GET['id_product']) ? (int)$_GET['id_product'] : 0).', \''.pSQL(Tools::safeOutput($_POST['tax_code'])).'\')');
+            }
+        } elseif (Tools::isSubmit('submitAddcustomer') && Tools::getValue('id_customer') && Tools::getValue('entity_use_code')) {
+            // Update Customer Entity Use Code when Customer form is submitted
+            $this->setEntityUseCode(Tools::getValue('id_customer'), Tools::getValue('entity_use_code'));
         }
-
 
         if ((isset($_GET['updateproduct']) || isset($_GET['addproduct'])) && isset($_GET['id_product']) && (int)$_GET['id_product']) {
             $r = Db::getInstance()->getRow('
@@ -897,10 +907,54 @@ class AvalaraTax extends Module
                     $(\'div #id_tax_rules_group\').parent().html(\'<label class="t">Avalara</label>\');
                 });
             </script>';
+        } elseif ((Tools::isSubmit('updatecustomer') || Tools::isSubmit('addcustomer')) && Tools::getValue('id_customer')) {
+            // Add fields for Entity Use Code to Customer edit page
+            if (version_compare(_PS_VERSION_, '1.6', '>=')) {
+                $entity_use_code = $this->getEntityUseCode(Tools::getValue('id_customer'));
+                $eu_select_options = $this->getEntityUseCodesOptions($entity_use_code);
+
+                return '<script type="text/javascript">'
+                .   '$(function() {'
+                .       'var $form_wrapper = $(\'.form-wrapper\');'
+                .       '$form_wrapper.append(\''
+                .       '<div class="form-group">'
+                .           '<label class="control-label col-lg-3" for="entity_use_code">'
+                .               '<span class="label-tooltip" data-toggle="tooltip" title="" data-original-title="'.$this->l('Tax rules will be handled by Avalara').'">'.$this->l('Entity Use Code (Avalara):').'</span>'
+                .           '</label>'
+                .           '<div class="input-group col-lg-3">'
+                .               '<select name="entity_use_code" id="entity-use-code-input">'
+                .                   join('', $eu_select_options)
+                .               '</select>'
+                .           '</div>'
+                .       '</div>\');'
+                .   '});'
+                .'</script>';
+            } elseif (version_compare(_PS_VERSION_, '1.5', '>=')) {
+                $entity_use_code = $this->getEntityUseCode(Tools::getValue('id_customer'));
+                $eu_select_options = $this->getEntityUseCodesOptions($entity_use_code);
+
+                return '<script type="text/javascript">'
+                .   '$(function() {'
+                .       'var $form = $(\'#customer_form\');'
+                .       '$form.append(\''
+                .       '<fieldset id="fieldset_1">'
+                .           '<legend>Avalara Module</legend>'
+                .           '<label for="entity_use_code">Entity Use Code</label>'
+                .           '<div class="margin-form">'
+                .               '<select type="text" name="entity_use_code" id="entity-use-code-input">'
+                .                   join('', $eu_select_options)
+                .               '</select>'
+                .           '</div>'
+                .       '</div>\');'
+                .   '});'
+                .'</script>';
+            } else {
+                // The Entity Use Code feature is currently not supported in these versions
+            }
         }
 
         if (Tools::getValue('tab') == 'AdminTaxes' || Tools::getValue('tab') == 'AdminTaxRulesGroup' || Tools::strtolower(Tools::getValue('controller'))== 'admintaxes' || Tools::strtolower(Tools::getValue('controller')) == 'admintaxrulesgroup') {
-            if (version_compare(_PS_VERSION_, '1.6', '>')) {
+            if (version_compare(_PS_VERSION_, '1.6', '>=')) {
                 // JS for 1.6
                 return '<script type="text/javascript">
                     $(function() {
@@ -910,7 +964,7 @@ class AvalaraTax extends Module
                         $(\'#content div:first\').append(\'<div class="warn alert alert-danger">'.$this->l('Tax rules are overwritten by Avalara Tax Module. Please make sure "Enable Tax" and "Use Eco Tax" are set to "No"').'</div>\');
                     });
                 </script>';
-            } elseif (version_compare(_PS_VERSION_, '1.5', '>')) {
+            } elseif (version_compare(_PS_VERSION_, '1.5', '>=')) {
                 // JS for 1.5
                 return '<script type="text/javascript">
                     $(function() {
@@ -1214,7 +1268,7 @@ else
                         <input type="text" name="avalara_cache_max_limit" value="'.(isset($confValues['AVALARA_CACHE_MAX_LIMIT']) ? (int)Tools::safeOutput($confValues['AVALARA_CACHE_MAX_LIMIT']) : '').'" style="width: 40px;" /> '.$this->l('seconds').'
                     </div>
                     <div class="margin-form">
-                        <input type="submit" class="button avalaratax_button" name="SubmitAvalaraTaxOptions" value="'.$this->l('Save Settings').'" />
+                        <input type="submit" class="button avalaratax_button" name="SubmitAvalaraTaxOptions" value="'.$this->l('Save Options').'" />
                         <input type="submit" class="button avalaratax_button" name="SubmitAvalaraTaxClearCache" value="'.$this->l('Clear Cache').'" style="display: none;"/>
                     </div>
                     <div class="sep"></div>
@@ -1297,7 +1351,7 @@ else
         $buffer .= '</select>
                 </div>
                 <div class="margin-form">
-                    <input type="submit" class="button" name="SubmitAvalaraAddressOptions" value="'.$this->l('Save Settings').'" />
+                    <input type="submit" class="button" name="SubmitAvalaraAddressOptions" value="'.$this->l('Save Address').'" />
                 </div>
             </fieldset>
         </form>
@@ -1578,6 +1632,13 @@ else
         $request->setDocDate(date('Y-m-d'));          // date
         $request->setCustomerCode('CustomerID: '.(int)$customerCode); // string Required
 
+        // Attempt to obtain and set customer entity use code for this request
+        $entity_use_code = $this->getEntityUseCode($customerCode); // $customerCode should be their customer_id
+
+        if (!empty(trim($entity_use_code))) {
+            $request->setCustomerUsageType($entity_use_code);
+        }
+
         $free_shipping = false; // Used below to determine values to send to Avalara for shipping
         $shipping_total = (float)0.00;
 
@@ -1792,11 +1853,10 @@ else
         $order = new Order((isset($_POST['id_order']) ? (int)$_POST['id_order'] : (int)$params['id_order']));
         $allProducts = Db::getInstance()->ExecuteS('SELECT p.`id_product`, pl.`name`, pl.`description_short`,
                                                     od.`product_price` as price, od.`reduction_percent`,
-                                                    od.`reduction_amount`, od.`product_quantity` as quantity, atc.`tax_code`
+                                                    od.`reduction_amount`, od.`product_quantity` as quantity
                                                     FROM `'._DB_PREFIX_.'order_detail` od
                                                     LEFT JOIN `'._DB_PREFIX_.'product` p ON (p.id_product = od.product_id)
                                                     LEFT JOIN `'._DB_PREFIX_.'product_lang` pl ON (pl.id_product = p.id_product)
-                                                    LEFT JOIN `'._DB_PREFIX_.'avalara_taxcodes` atc ON (atc.id_product = p.id_product)
                                                     WHERE pl.`id_lang` = '.(int)Configuration::get('PS_LANG_DEFAULT').' AND od.`id_order` = '.(isset($_POST['id_order']) ? (int)$_POST['id_order'] : (int)$params['id_order']));
 
         $products = array();
@@ -1806,7 +1866,7 @@ else
                                 'description_short' => $v['description_short'],
                                 'quantity' => $v['quantity'],
                                 'total' => $v['quantity'] * ($v['price'] - ($v['price'] * ($v['reduction_percent'] / 100)) - ($v['reduction_amount'])), // Including those products with discounts
-                                'tax_code' => $v['tax_code'],
+                                'tax_code' => $this->getProductTaxCode($v['id_product']),
                                 'taxable' => (bool)$this->getProductTaxable((int)$v['id_product']));
         }
 
@@ -1921,22 +1981,102 @@ else
         }
     }
 
-    // Method obtains the Avalara TaxCode value set on the Product Prices page
+    // Returns the Avalara TaxCode value, or UPC code if the tax code value is empty
     public function getProductTaxCode($id_product)
     {
-        $result = Db::getInstance()->getValue('
+        $tax_code = Db::getInstance()->getValue('
         SELECT `tax_code`
         FROM `'._DB_PREFIX_.'avalara_taxcodes` atc
         WHERE atc.`id_product` = '.(int)$id_product);
 
-        //return $result ? Tools::safeOutput($result) : '0';
-        return empty($result) ? '0' : Tools::safeOutput($result);
+        // If we retrieved a non-empty tax code, sanitize and return it now
+        if (!empty($tax_code)) {
+            return Tools::safeOutput($tax_code);
+        }
+
+        // Attempt to fallback to upc codes
+        $upc = Db::getInstance()->getValue('
+            SELECT `upc`
+            FROM `'._DB_PREFIX_.'product` psp
+            WHERE psp.`id_product` = '.(int)$id_product);
+
+        // If we retrieved a valid upc code (12 characters) return it now
+        if (!empty($upc) && Tools::strlen($upc) == 12) {
+            $upc = 'upc' . $upc; // Add upc to front for Avalara
+            return Tools::safeOutput($upc);
+        }
+
+        return '0'; // Everything else failed, return default value
     }
 
     public function getProductTaxable($idProduct)
     {
         // !== and not != because it can fail if getProductTaxCode return an int.
         return $this->getProductTaxCode($idProduct) !== 'NT';
+    }
+
+    // Obtains the Avalara Entity Use Code for the given customer id
+    public function getEntityUseCode($customer_id) {
+        $result = Db::getInstance()->getValue('
+        SELECT `entity_use_code`
+        FROM `'._DB_PREFIX_.'avalara_customer_entity_use_codes` aceuc
+        WHERE aceuc.`customer_id` = '.(int)$customer_id);
+
+        return empty($result) ? ' ' : Tools::safeOutput($result);
+    }
+
+    // Sets the value of Avalara Entity Use Code for the given customer_id and use code value
+    public function setEntityUseCode($customer_id, $entity_use_code) {
+        $result = Db::getInstance()->Execute('
+            REPLACE INTO `'._DB_PREFIX_.'avalara_customer_entity_use_codes` (`customer_id`, `entity_use_code`)
+            VALUES ('.(int)$customer_id.', \''.$entity_use_code.'\')');
+
+        return $result;
+    }
+
+    // Returns a keyed array of defined Entity Use Codes
+    public function getEntityUseCodes(){
+        return array(
+            ' ' => 'No Entity Use Code (Default)', // Intentionally uses a space to pass Tools::getValue('entity_use_code')'s empty() check
+            'A' => 'A - Federal Government',
+            'B' => 'B - State Government',
+            'C' => 'C - Tribal Government',
+            'D' => 'D - Foreign Diplomat',
+            'E' => 'E - Charitable Organization',
+            'F' => 'F - Religious/Education',
+            'G' => 'G - Resale',
+            'H' => 'H - Agricultural Production',
+            'I' => 'I - Industrial Production / Manufacturing',
+            'J' => 'J - Direct Pay Permit',
+            'K' => 'K - Direct Mail',
+            'L' => 'L - Other',
+            'N' => 'N - Local Government',
+            'P' => 'P - Commercial Aquaculture (Canada)',
+            'Q' => 'Q - Commercial Fishery (Canada)',
+            'R' => 'R - Non-resident (Canada)',
+            'MED1' => 'MED1 - US MDET with exempt sales tax',
+            'MED2' => 'MED2 - US MDET with exempt sales tax'
+        );
+    }
+
+    // Returns an array of Select Option element strings based on the set of defined Entity Use Codes
+    public function getEntityUseCodesOptions($currently_selected_use_code){
+        $possible_eu_codes = $this->getentityUseCodes();
+
+        $eu_select_options = array();
+        $option_not_yet_selected = true;
+
+        // Build HTML Option elements based on possible entity use codes array
+        foreach ($possible_eu_codes as $k => $v) {
+            if ($option_not_yet_selected && ($k == $currently_selected_use_code)) {
+                $eu_select_options[] = '<option value="'.$k.'" selected="selected">'.$v.'</option>';
+                $option_not_yet_selected = false;
+            } else {
+                $eu_select_options[] = '<option value="'.$k.'">'.$v.'</option>';
+            }
+        }
+
+        return $eu_select_options;
     }
 
     private function purgeTempTable()
