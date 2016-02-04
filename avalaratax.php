@@ -1635,7 +1635,9 @@ else
         // Attempt to obtain and set customer entity use code for this request
         $entity_use_code = $this->getEntityUseCode($customerCode); // $customerCode should be their customer_id
 
-        if (!empty(trim($entity_use_code))) {
+        # PHP less than 5.5.0 cannot use expressions in empty()
+        # e.g. if(!empty(trim($entity_use_code)))
+        if (!(trim($entity_use_code) == false)) {
             $request->setCustomerUsageType($entity_use_code);
         }
 
