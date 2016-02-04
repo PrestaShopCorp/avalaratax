@@ -2095,7 +2095,10 @@ function avalaraAutoload($className)
 {
     $className = str_replace(chr(0), '', $className);
     if (!preg_match('/^\w+$/', $className)) {
-        die('Invalid classname.');
+        // die('Invalid classname.');
+        // Instead of dying, we simply do not autolaod classes that
+        // do not match our expected naming convention
+        return;
     }
 
     $moduleDir = dirname(__FILE__).'/';
