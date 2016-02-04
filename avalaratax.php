@@ -586,7 +586,7 @@ class AvalaraTax extends Module
         $cart_hash = md5(serialize($s_cart));
 
         // Verify that we have all the required information to uniquely identify a cart
-        if (empty($s_cart['cart_id']) || empty($s_cart['customer_id']) || empty('customer_tax_address_id') || empty('carrier')) {
+        if (empty($s_cart['cart_id']) || empty($s_cart['customer_id']) || empty($s_cart['customer_tax_address_id']) || empty($s_cart['carrier'])) {
             return false; // Skip everything below because we are missing a cart id, a customer id or a tax_address_id
         }
 
