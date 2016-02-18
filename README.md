@@ -1,6 +1,8 @@
 # Avalara AvaTax Integration
 ## Version Support
-This module currently supports versions 1.5.2.x and 1.6.1.x of Prestashop.
+This module currently supports versions 1.5.6.x and 1.6.1.x of Prestashop. Versions 1.5.4.x and 1.5.5.x may also work, but are NOT tested nor supported. Version 1.6.0.x does NOT work and is NOT supported.
+
+This module only supports servers that are running PHP 5.4.0 or greater.
 
 ## Installation
 

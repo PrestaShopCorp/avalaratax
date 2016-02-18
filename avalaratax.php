@@ -40,7 +40,7 @@ class AvalaraTax extends Module
     {
         $this->name = 'avalaratax';
         $this->tab = 'billing_invoicing';
-        $this->version = '3.5.6';
+        $this->version = '3.5.7';
         $this->author = 'PrestaShop';
         parent::__construct();
 
@@ -54,6 +54,24 @@ class AvalaraTax extends Module
 
         if (!extension_loaded('soap') || !class_exists('SoapClient')) {
             $this->warning = $this->l('SOAP extension should be enabled on your server to use this module.');
+        }
+
+        // Warn if PHP version is less than 5.4.0
+        if (version_compare(phpversion(), '5.4.0', '<')) {
+            $this->warning = $this->l('PHP versions below 5.4.0 are NOT supported by this module. Use at your own risk.');
+        }
+
+        // Check Prestashop versions and warn if this module does not support a specific version
+        if (version_compare(_PS_VERSION_, '1.6.1', '>=')) {
+            // Do nothing, versions 1.6.1.x are supported
+        } elseif (version_compare(_PS_VERSION_, '1.5.6', '>=') && version_compare(_PS_VERSION_, '1.6', '<')) {
+            // Do nothing, versions 1.5.6.x are supported
+        } elseif (version_compare(_PS_VERSION_, '1.5.4', '>=') && version_compare(_PS_VERSION_, '1.5.6', '<')) {
+            // Versions 1.5.4.x and 1.5.5.x should work, however, they are not tested or supported
+            $this->warning = $this->l('This module MAY work on Prestashop 1.5.4.x and 1.5.5.x but it is NOT tested. Please use Prestashop 1.5.6.x if you want support.');
+        } else {
+            // All remaining versions are NOT supported and likely will not work.
+            $this->warning = $this->l('Your version of Prestashop is NOT supported by this module.');
         }
     }
 
@@ -586,7 +604,7 @@ class AvalaraTax extends Module
         $cart_hash = md5(serialize($s_cart));
 
         // Verify that we have all the required information to uniquely identify a cart
-        if (empty($s_cart['cart_id']) || empty($s_cart['customer_id']) || empty('customer_tax_address_id') || empty('carrier')) {
+        if (empty($s_cart['cart_id']) || empty($s_cart['customer_id']) || empty($s_cart['customer_tax_address_id']) || empty($s_cart['carrier'])) {
             return false; // Skip everything below because we are missing a cart id, a customer id or a tax_address_id
         }
 
@@ -1635,7 +1653,9 @@ else
         // Attempt to obtain and set customer entity use code for this request
         $entity_use_code = $this->getEntityUseCode($customerCode); // $customerCode should be their customer_id
 
-        if (!empty(trim($entity_use_code))) {
+        # PHP less than 5.5.0 cannot use expressions in empty()
+        # e.g. if(!empty(trim($entity_use_code)))
+        if (!(trim($entity_use_code) == false)) {
             $request->setCustomerUsageType($entity_use_code);
         }
 
